@@ -8,13 +8,26 @@ import pywt
 
 # Отображение сигналов
 def plot_signal(signal_args):
-#PLOT_SIGNAL Отобразить сигнал, в случае нескольких сигналов, они
-#передаются по горизонтали
-# Аргументы:
-#   один аргумент - значения сигнала, тогда по оси абсцис отсчеты
-#   два аргумента - {временная шкала или шаг дискретизации, значения амплитуд}
-#   три аргумента - третьим передается название окна
-    lines = ["-","--","-.",":"]
+    """
+    Отобразить сигнал, в случае нескольких сигналов, они
+    передаются _____в качестве второго индекса массива____(вот тут я не уверен, не понял, что значит "по горизонтали")
+    В зависимости от числа переданных аргументов (размерности signal_args), функция распознает их следующим образом:
+
+    Parameters
+    ----------
+    signal_args : array_like
+                  Значения по оси ординат (ось OY). В таком случае по оси абсцис (ось OX)
+                  будут отложены номера отсчетов.
+    signal_args : [array_like or int, array_like]
+                  Набор значений оси абсцисс или частота дискретизации 
+                  в качестве первого аргумента. значения амплитуд для 
+                  оси ординат - в качестве второго.
+    signal_args : [array_like or int, array_like, str]
+                  Первые два аргумента подразумеваются теми же, что и для случая выше. В
+                  качестве третьего аргумента передается название линии (пишется в легенде).
+    """
+
+    lines = ["-", "--", "-.", ":"] # Список возможных стилей линий графиков
     leg = []
     plt.figure()
     for i in range (len(signal_args)):
@@ -171,7 +184,7 @@ def mfreqz(b,a):
 
 
 # Вывод АЧХ и ФЧХ фильтра по его коэффициентам
-def mfreqz3(b,a, names, lims):
+def mfreqz3(b, a, names, lims=[0,1]):
     lines = ["-","--","-.",":"]
     plt.subplot(211)
     for i in range(3):
@@ -350,7 +363,7 @@ def apply_ideal_filter(t_d, filter_type, f_cut_hz, signal_in):
             filter_f_char[f_cut_i:] = 0
             #filter_f_char(f_cut_i:end) = 0   # если ВЧ
         else:   
-            print('Ошибка вввода: Тип фильтра')
+            raise TypeError('Ошибка вввода: Тип фильтра')
 
         # формирование АЧХ для двухстороннего спектра
         # с предпоследнего отсчета
@@ -359,7 +372,6 @@ def apply_ideal_filter(t_d, filter_type, f_cut_hz, signal_in):
             tmp_filter_f_char = tmp_filter_f_char[:len(tmp_filter_f_char) - 1]
         filter_f_char = np.append(filter_f_char, tmp_filter_f_char)
     elif (isinstance(f_cut_hz, list)):     # Если два значения частоты среза, то ПФ или ЗФ фильтр
-        print('Работаем с веткой двухчастотных фильтров')
         f_cut_0 = np.argmax(f_axis > f_cut_hz[0])
         f_cut_1 = np.argmax(f_axis > f_cut_hz[1])
         filter_f_char = np.ones(int(np.ceil((n_signal+1)/2)))
@@ -374,9 +386,8 @@ def apply_ideal_filter(t_d, filter_type, f_cut_hz, signal_in):
         if (n_signal % 2 == 0):
             tmp_filter_f_char = tmp_filter_f_char[:len(tmp_filter_f_char) - 1]
         filter_f_char = np.append(filter_f_char, tmp_filter_f_char)
-        # print("none")
     else:
-        print('Ошибка ввода: Граничные частоты фильтра')
+        raise TypeError('Ошибка ввода: Граничные частоты фильтра')
         
     signal_in_sp = fft(signal_in, n_signal)
     signal_out_sp = signal_in_sp * filter_f_char
@@ -442,7 +453,7 @@ def create_butt_filter(t_d, filter_type, f_cut_hz, filter_order):
             print('Ошибка вввода: Тип фильтра')
 
     else:
-        error('Ошибка ввода: Граничные частоты фильтра')
+        raise TypeError('Ошибка ввода: Граничные частоты фильтра')
     
     f_d = 1/t_d            # частота дискретизации
     w_n = np.array(f_cut_hz)/(f_d/2) # нормированная частота среза
@@ -476,7 +487,7 @@ def create_cheb2_filter(t_d, filter_type, f_cut_hz, filter_order, bnd_att_db):
             print('Ошибка вввода: Тип фильтра')
 
     else:
-        error('Ошибка ввода: Граничные частоты фильтра')
+        raise TypeError('Ошибка ввода: Граничные частоты фильтра')
 
     f_d = 1/t_d            # частота дискретизации, Гц
     w_n = np.array(f_cut_hz)/(f_d/2) # нормированная частота среза (w/w_d)
@@ -509,7 +520,7 @@ def create_cheb1_filter(t_d, filter_type, f_cut_hz, filter_order, bnd_att_db):
             print('Ошибка вввода: Тип фильтра')
 
     else:
-        error('Ошибка ввода: Граничные частоты фильтра')
+        raise TypeError('Ошибка ввода: Граничные частоты фильтра')
         
     f_d = 1/t_d            # частота дискретизации, Гц
     w_n = np.array(f_cut_hz)/(f_d/2) # нормированная частота среза (w/w_d)
