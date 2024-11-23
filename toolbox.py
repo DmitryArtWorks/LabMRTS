@@ -27,7 +27,7 @@ def plot_signal(signal_args):
                   в качестве первого аргумента. Значения амплитуд для 
                   оси ординат - в качестве второго.
     signal_args : [array_like or int, array_like, str]
-                  Первые два аргумента подразумеваются теми же, что и для случая выше. В
+                  Первые два аргумента подразумеваются такими же, что и для случая выше. В
                   качестве третьего аргумента передается название линии (пишется в легенде).
     """
 
@@ -36,10 +36,9 @@ def plot_signal(signal_args):
     plt.figure()
     for i in range (len(signal_args)):
         markers = {'-r', '--g', ':b'}
-        args_len = len(signal_args[0])
+        args_len = len(signal_args[i])
         if (args_len > 3 or args_len < 1):
-            print('Неверный формат ввода')
-            return
+            raise TypeError('Ошибка ввода. Неверное число аргументов (допускается от 1 до 3 аргументов)')
         if (args_len == 1):
             signal = signal_args[i][0]
             x_axis = range(0, len(signal))
@@ -48,14 +47,9 @@ def plot_signal(signal_args):
             if (type(signal_args[i][0]) == float):
                 x_axis = np.arange(0, signal_args[i][0]*(len(signal)), signal_args[i][0])
             else:
-                x_axis = signal_args[i][1]
-            if (args_len == 2):
-                tab_name ='Сигнал'
-            else:
-                tab_name = signal_args[i][2]
-                
+                x_axis = signal_args[i][1]                
     
-         # Построение графика
+        # Построение графика
         
         plt.title("Name") # заголовок
         plt.xlabel("t, мкc") # ось абсцисс
@@ -64,49 +58,70 @@ def plot_signal(signal_args):
         
         if (args_len == 3):
             leg.append(signal_args[i][2])
+        else:
+            leg.append('Unnamed signal ' + str(i)) # Если не нравится, можно заменить 
+                                                # содержимое скобок на " ". Работает
+                                                # тоже красиво
         
     plt.legend(leg)
     plt.title('Исходный сигнал')
+    plt.grid()
     plt.show()
 
 
 # Отображение спектр сигнала
-def plot_spectum(signal_array):
-    t_d_us = signal_array[0][0]*1e6
-    #plt.figure()
-    fig, axs = plt.subplots(len(signal_array), 1)
+def plot_spectum(signal_args):
+    """
+    Построить график модуля БПФ сигнала, в случае необходимости вывода 
+    нескольких линий на один график, они передаются в качестве второй 
+    размерности массива, типа: [[signal_args первой линии], [signal_args второй линии]].
+    Одинаковая размерность не обязательна.
     
-    for i in range(len(signal_array)):
-        signal = signal_array[i][1]
+    Parameters
+    ----------       
+    signal_args : [int, array_like]
+                  Частота дискретизации в качестве первого аргумента. 
+                  Отсчеты сигнала во временной области - в качестве второго.
+    signal_args : [int, array_like, str]
+                  Первые два аргумента подразумеваются такими же, что и для случая выше. В
+                  качестве третьего аргумента передается название линии (пишется в легенде).
+    """
+
+    t_d_us = signal_args[0][0]*1e6
+    plt.figure()
+
+    for i in range(len(signal_args)):
+        args_len = len(signal_args[i])
+        if (args_len > 3 or args_len < 2):
+            raise TypeError('Ошибка ввода. Неверное число аргументов (допускается 2 или 3 аргумента)')
+        signal = signal_args[i][1]
         n_signal = signal.size
         t_window = n_signal*t_d_us
         f_step_mhz = 1/t_window
+        # Формируем точки оси абсцисс графика
         if n_signal % 2 == 0:
             f_axis = np.arange(0, (n_signal+1)*f_step_mhz/2, f_step_mhz)
-            tmp_axis = np.flip(f_axis[2:]) * (-1)
+            tmp_axis = np.flip(f_axis[2:]) * (-1) 
             f_axis = np.append(tmp_axis, f_axis)
         else:
-            print('нечетное число отсчетов')
             f_axis = np.arange(0, (n_signal)*f_step_mhz/2, f_step_mhz)
             tmp_axis = np.flip(f_axis[1:]) * (-1)
             f_axis = np.append(tmp_axis, f_axis)
-    
+        
+        # БПФ входных отсчетов
         signal_spectrum = 1/n_signal*fft(signal, n_signal)
-        if len(signal_array) == 1:
-            plt.title("Спектр") # заголовок
-            plt.xlabel("Частота, МГц") # ось абсцисс
         
-            plt.plot(f_axis, fftshift(abs(signal_spectrum)))  # построение графика
+        # Название линий
+        if (len(signal_args[i]) > 2):
+            line_label = str(signal_args[i][2])
         else:
-            fig.suptitle('Спектр')
-             # Построение графика
-            if (len(signal_array[i]) > 2):
-                axs[i].set(label = (signal_array[i][2]))
-        
-            # # заголовок
-            axs[i].set(xlabel = ("Частота, МГц")) # ось абсцисс
-            axs[i].plot(f_axis, fftshift(abs(signal_spectrum)), label=(signal_array[i][2]))  # построение графика
-            axs[i].legend()
+            line_label = 'Unnamed spectrum ' + str(i)
+            
+        plt.plot(f_axis, fftshift(abs(signal_spectrum)), label=line_label)  # построение графика
+    plt.title("Спектр") # заголовок
+    plt.xlabel("Частота, МГц") # ось абсцисс        
+    plt.legend()
+    plt.grid()
     plt.show()
 
 
