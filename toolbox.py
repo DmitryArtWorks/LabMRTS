@@ -3,15 +3,19 @@ import math
 import numpy as np
 from scipy.fft import fft, fftfreq, fftshift, ifft, rfft
 from scipy.signal import butter, lfilter, cheby2, cheby1, impulse2, freqz, spectrogram
-import pywt
+import pywt # С этим модулем могут быть проблемы (может быть не установлен). 
+            # Лечение: pip install pywavelets
 
 
 # Отображение сигналов
 def plot_signal(signal_args):
     """
-    Отобразить сигнал, в случае нескольких сигналов, они
-    передаются _____в качестве второго индекса массива____(вот тут я не уверен, не понял, что значит "по горизонтали")
-    В зависимости от числа переданных аргументов (размерности signal_args), функция распознает их следующим образом:
+    Отобразить сигнал, в случае необходимости вывода нескольких линий на один 
+    график, они передаются в качестве второй размерности массива, типа:
+    [[signal_args первой линии], [signal_args второй линии]]. Одинаковая
+    размерность не обязательна.
+    В зависимости от числа переданных аргументов (размерности signal_args), 
+    функция распознает их следующим образом:
 
     Parameters
     ----------
@@ -20,7 +24,7 @@ def plot_signal(signal_args):
                   будут отложены номера отсчетов.
     signal_args : [array_like or int, array_like]
                   Набор значений оси абсцисс или частота дискретизации 
-                  в качестве первого аргумента. значения амплитуд для 
+                  в качестве первого аргумента. Значения амплитуд для 
                   оси ординат - в качестве второго.
     signal_args : [array_like or int, array_like, str]
                   Первые два аргумента подразумеваются теми же, что и для случая выше. В
@@ -31,18 +35,18 @@ def plot_signal(signal_args):
     leg = []
     plt.figure()
     for i in range (len(signal_args)):
-        markers = {'-r','--g',':b'}
+        markers = {'-r', '--g', ':b'}
         args_len = len(signal_args[0])
         if (args_len > 3 or args_len < 1):
             print('Неверный формат ввода')
             return
         if (args_len == 1):
             signal = signal_args[i][0]
-            x_axis = range(0,len(signal))
+            x_axis = range(0, len(signal))
         if (args_len == 2 or args_len == 3):
             signal = signal_args[i][1]
             if (type(signal_args[i][0]) == float):
-                x_axis = np.arange(0,signal_args[i][0]*(len(signal)),signal_args[i][0])
+                x_axis = np.arange(0, signal_args[i][0]*(len(signal)), signal_args[i][0])
             else:
                 x_axis = signal_args[i][1]
             if (args_len == 2):
@@ -78,12 +82,12 @@ def plot_spectum(signal_array):
         t_window = n_signal*t_d_us
         f_step_mhz = 1/t_window
         if n_signal % 2 == 0:
-            f_axis = np.arange(0,(n_signal+1)*f_step_mhz/2,f_step_mhz)
+            f_axis = np.arange(0, (n_signal+1)*f_step_mhz/2, f_step_mhz)
             tmp_axis = np.flip(f_axis[2:]) * (-1)
             f_axis = np.append(tmp_axis, f_axis)
         else:
             print('нечетное число отсчетов')
-            f_axis = np.arange(0,(n_signal)*f_step_mhz/2,f_step_mhz)
+            f_axis = np.arange(0, (n_signal)*f_step_mhz/2, f_step_mhz)
             tmp_axis = np.flip(f_axis[1:]) * (-1)
             f_axis = np.append(tmp_axis, f_axis)
     
@@ -144,16 +148,16 @@ def plot_swt(data, t_d):
     plt.figure()
     coef, freqs = pywt.cwt(data, np.arange(1, 20), 'morl',
                        sampling_period=t_d)
-    plt.pcolor(range(1,6401), freqs, coef)
+    plt.pcolor(range(1, 6401), freqs, coef)
     plt.show()
 
 
 # Вывод ИХ фильтра по его коэффициентам
-def impz(b,a, name):
+def impz(b, a, name):
     impulse = [0]*100
     impulse[0] =1.
     x = range(100)
-    response = lfilter(b,a,impulse)
+    response = lfilter(b, a, impulse)
     plt.stem(x, response)
     plt.ylabel('Amplitude')
     plt.xlabel(r'n (samples)')
@@ -162,19 +166,19 @@ def impz(b,a, name):
 
 
 # Вывод АЧХ и ФЧХ фильтра по его коэффициентам
-def mfreqz(b,a):
-    w,h = freqz(b,a)
-    h_dB = 20 * np.log10 (abs(h))
+def mfreqz(b, a):
+    w,h = freqz(b, a)
+    h_dB = 20 * np.log10(abs(h))
     plt.subplot(211)
-    plt.plot(w/max(w),h_dB)
+    plt.plot(w/max(w), h_dB)
     plt.ylabel('Magnitude (db)')
     plt.xlabel(r'Normalized Frequency (x$\pi$rad/sample)')
     plt.title(r'Frequency response')
     plt.grid('on')
     plt.ylim(bottom=-30)
     plt.subplot(212)
-    h_Phase = np.unwrap(np.arctan2(np.imag(h),np.real(h)))
-    plt.plot(w/max(w),h_Phase)
+    h_Phase = np.unwrap(np.arctan2(np.imag(h), np.real(h)))
+    plt.plot(w/max(w), h_Phase)
     plt.ylabel('Phase (radians)')
     plt.xlabel(r'Normalized Frequency (x$\pi$rad/sample)')
     plt.title(r'Phase response')
@@ -188,22 +192,22 @@ def mfreqz3(b, a, names, lims=[0,1]):
     lines = ["-","--","-.",":"]
     plt.subplot(211)
     for i in range(3):
-        w,h = freqz(b[i],a[i])
-        h_dB = 20 * np.log10 (abs(h))
-        plt.plot(w/max(w),h_dB, linestyle=lines[i])
+        w, h = freqz(b[i], a[i])
+        h_dB = 20 * np.log10(abs(h))
+        plt.plot(w/max(w), h_dB, linestyle=lines[i])
         plt.legend(names)
     plt.ylabel('Magnitude (db)')
     plt.xlabel(r'Normalized Frequency (x$\pi$rad/sample)')
     plt.title(r'Frequency response')
     plt.grid('on')
-    plt.ylim(top=1,bottom=-30)
+    plt.ylim(top=1, bottom=-30)
     plt.xlim(lims[0], lims[1])
     
     plt.subplot(212)
     for i in range(3):
-        w,h = freqz(b[i],a[i])
-        h_Phase = np.unwrap(np.arctan2(np.imag(h),np.real(h)))
-        plt.plot(w/max(w),h_Phase, linestyle=lines[i])
+        w,h = freqz(b[i], a[i])
+        h_Phase = np.unwrap(np.arctan2(np.imag(h), np.real(h)))
+        plt.plot(w/max(w), h_Phase, linestyle=lines[i])
         #plt.legend(names)
     plt.xlim(lims[0], lims[1])
     plt.ylabel('Phase (radians)')
@@ -220,7 +224,7 @@ def mfreqz3(b, a, names, lims=[0,1]):
 
 
 # Формирование последовательности чипов
-def generate_sequence(sig_type,t_d, n_chips, t_imp, f_low):
+def generate_sequence(sig_type, t_d, n_chips, t_imp, f_low):
 #Ф-я формирования набора последовательности сигналов перестраиваемых по
 #частоте
 # Аргументы:
@@ -236,7 +240,7 @@ def generate_sequence(sig_type,t_d, n_chips, t_imp, f_low):
         f_mod = f_low/5
         for i in range(0, n_chips):
             sig = [0] * n_cnts_sig
-            sig[:n_cnts_sig] = get_chirp_pulse(t_d, t_imp, t_imp*0.96, f_low, f_mod)
+            sig[:n_cnts_sig] = get_chirp_pulse(t_d, t_imp, 0.96*t_imp, f_low, f_mod)
             res_sig = np.append(res_sig, sig)
     elif (sig_type == 'radio'): # тип р/импульс
         
@@ -244,7 +248,7 @@ def generate_sequence(sig_type,t_d, n_chips, t_imp, f_low):
         for i in range(0, n_chips):
             sig = [0] * n_cnts_sig
             random_freq = f_low + np.random.randint(5, size=(1))*8/t_imp
-            sig[:n_cnts_sig] = get_radio_pulse(t_d, t_imp, t_imp*0.96, random_freq)
+            sig[:n_cnts_sig] = get_radio_pulse(t_d, t_imp, 0.96*t_imp, random_freq)
             res_sig = np.append(res_sig, sig)
         
     elif (sig_type == 'AM'):
@@ -376,7 +380,7 @@ def apply_ideal_filter(t_d, filter_type, f_cut_hz, signal_in):
         f_cut_1 = np.argmax(f_axis > f_cut_hz[1])
         filter_f_char = np.ones(int(np.ceil((n_signal+1)/2)))
         if (filter_type == 'BP'):
-            filter_f_char[0:f_cut_0] = 0
+            filter_f_char[:f_cut_0] = 0
             filter_f_char[f_cut_1:] = 0
             #filter_f_char(1:f_cut_i-1) = 0   # если НЧ 
         elif (filter_type == 'S'): 
@@ -408,7 +412,7 @@ def apply_butt_filter(t_d, filter_type, f_cut_hz, filter_order, signal_in):
 #   signal_in - входной сигнал (вектор строка)
     b, a = create_butt_filter(t_d, filter_type, f_cut_hz, filter_order)  # формирование коэффициентов фильтра Баттерворта
     
-    signal_out = lfilter(b,a,signal_in)     # фильтрация сигнала
+    signal_out = lfilter(b, a, signal_in)     # фильтрация сигнала
     return signal_out
 
 
@@ -424,7 +428,7 @@ def apply_cheb2_filter(t_d, filter_type, f_cut_hz, filter_order, bnd_att_db, sig
 #   signal_in - входной сигнал (вектор строка)
     b, a = create_cheb2_filter(t_d, filter_type, f_cut_hz, filter_order, bnd_att_db)  # формирование фильтра
     
-    signal_out = lfilter(b,a,signal_in)                 # фильтрация сигнала
+    signal_out = lfilter(b, a, signal_in)                 # фильтрация сигнала
     return signal_out
 
 
