@@ -4,7 +4,9 @@ import numpy as np
 from scipy.fft import fft, fftshift, ifft
 from scipy.signal import butter, lfilter, cheby2, cheby1, freqz
 import pywt # С этим модулем могут быть проблемы (может быть не установлен). 
-            # Лечение: pip install pywavelets
+            # Лечение: pip install pywavelets. Несмотря на то, что модуль
+            # не используется непосредственно в toolbox, его импорт позволяет
+            # отказаться от его импорта непосредственно в ЛР 4.
 
 
 # Отображение сигналов
@@ -43,37 +45,34 @@ def plot_signal(signal_args):
     lines = ["-", "--", "-.", ":"] # Список возможных стилей линий графиков
     leg = []
     plt.figure()
-    for i in range (len(signal_args)):
-        markers = {'-r', '--g', ':b'}
-        args_len = len(signal_args[i])
-        if (args_len > 3 or args_len < 1):
+    for i in range (len(signal_args)):  # Цикл по числу линий, переданных в функцию
+        
+        args_len = len(signal_args[i])  # Определяем, сколько аргументов передано для i-ой линии.
+        if (args_len > 3 or args_len < 1): # Если аргументов оказалось не столько, сколько ожидалось.
             raise TypeError('Ошибка ввода. Неверное число аргументов (допускается от 1 до 3 аргументов)')
-        if (args_len == 1):
+        if (args_len == 1): # Ветка для случая, когда был передан один аргумент (набор значений оси ординат)
             signal = signal_args[i][0]
             x_axis = range(0, len(signal))
         if (args_len == 2 or args_len == 3):
             signal = signal_args[i][1]
-            if (type(signal_args[i][0]) == float):
+            if (type(signal_args[i][0]) == float): # Если в качестве первого аргумента передан шаг дискретизации
                 x_axis = np.arange(0, signal_args[i][0]*(len(signal)), signal_args[i][0])
             else:
                 x_axis = signal_args[i][1]                
     
-        # Построение графика
-        
-        plt.title("Name") # заголовок
-        plt.xlabel("t, мкc") # ось абсцисс
-        
-        plt.plot(x_axis*1e6, np.real(signal), linestyle=lines[i])  # построение графика
+        # Построение i-й линии        
+        plt.plot(x_axis*1e6, np.real(signal), linestyle=lines[i])
         
         if (args_len == 3):
             leg.append(signal_args[i][2])
         else:
-            leg.append('Unnamed signal ' + str(i)) # Если не нравится, можно заменить 
-                                                # содержимое скобок на " ". Работает
-                                                # тоже красиво
+            leg.append('Unnamed signal ' + str(i))  # Если не нравится, можно заменить 
+                                                    # содержимое скобок на " ". Работает
+                                                    # тоже красиво
         
     plt.legend(leg)
     plt.title('Исходный сигнал')
+    plt.xlabel("t, мкc") # ось абсцисс
     plt.grid()
     plt.show()
 
@@ -105,18 +104,26 @@ def plot_spectum(signal_args):
         Если в функцию было передано неверное число аргументов.
     """
 
-    t_d_us = signal_args[0][0]*1e6
+    t_d_us = signal_args[0][0]*1e6 # Шаг дискретизации, переведенный в микросекунды
     plt.figure()
 
-    for i in range(len(signal_args)):
-        args_len = len(signal_args[i])
-        if (args_len > 3 or args_len < 2):
+    for i in range(len(signal_args)):   # Цикл по числу линий, переданных в функцию
+        
+        args_len = len(signal_args[i])  # Определяем, сколько аргументов передано для i-ой линии.
+        if (args_len > 3 or args_len < 2):  # Если аргументов оказалось не столько, сколько ожидалось.
             raise TypeError('Ошибка ввода. Неверное число аргументов (допускается 2 или 3 аргумента)')
-        signal = signal_args[i][1]
-        n_signal = signal.size
-        t_window = n_signal*t_d_us
-        f_step_mhz = 1/t_window
-        # Формируем точки оси абсцисс графика
+        
+        signal = signal_args[i][1]  # Массив значений оси ординат
+        n_signal = signal.size  # Способ получить число отсчетов (по сути то же самое, что и len())
+        t_window = n_signal*t_d_us  # Вычисление размера окна
+        f_step_mhz = 1/t_window # Шаг по частоте (нужен для формирования отсчетов оси абсцисс)
+        
+        # Формируем точки оси абсцисс графика. Сначала формируем
+        # область положительных частот, затем путем отзеркаливания
+        # формируется область отрицательных частот.
+        # В зависимости от того, четное ли число точек в исходном
+        # сигнале, или нечетное, "зеркалится" на 1 отсчет больше или
+        # меньше
         if n_signal % 2 == 0:
             f_axis = np.arange(0, (n_signal+1)*f_step_mhz/2, f_step_mhz)
             tmp_axis = np.flip(f_axis[2:]) * (-1) 
@@ -126,16 +133,17 @@ def plot_spectum(signal_args):
             tmp_axis = np.flip(f_axis[1:]) * (-1)
             f_axis = np.append(tmp_axis, f_axis)
         
-        # БПФ входных отсчетов
+        # БПФ входных отсчетов, нормированное на число отсчетов
         signal_spectrum = 1/n_signal*fft(signal, n_signal)
         
-        # Название линий
+        # Формирование названий линий
         if (len(signal_args[i]) > 2):
             line_label = str(signal_args[i][2])
         else:
-            line_label = 'Unnamed spectrum ' + str(i)
+            line_label = 'Unnamed spectrum ' + str(i)   # Выражение может быть заменено 
+                                                        # на: ' '(пробел в кавычках)
             
-        plt.plot(f_axis, fftshift(abs(signal_spectrum)), label=line_label)  # построение графика
+        plt.plot(f_axis, fftshift(abs(signal_spectrum)), label=line_label)  # построение i-й линии
     plt.title("Спектр") # заголовок
     plt.xlabel("Частота, МГц") # ось абсцисс        
     plt.legend()
@@ -143,54 +151,33 @@ def plot_spectum(signal_args):
     plt.show()
 
 
-# Отображение спектрограммы
-def plot_spectrograms(data):
-    plt.figure()
-    plt.subplot(311)
-
-    #большое количество точек для БПФ
-    powerSpectrum, freqenciesFound, time, imageAxis = plt.specgram(data, NFFT=1024, Fs=None, Fc=None, detrend=None, window=None, 
-             noverlap=None, cmap=None, xextent=None, pad_to=None, sides=None, 
-             scale_by_freq=None, mode=None, scale=None, vmin=None, vmax=None)
-
-    plt.xlabel('Sample')
-    plt.ylabel('Normalized Frequency')
-    plt.subplot(312)
-
-    #стандартный шаг
-    powerSpectrum, freqenciesFound, time, imageAxis = plt.specgram(data, NFFT=None, Fs=None, Fc=None, detrend=None, window=None, 
-             noverlap=None, cmap=None, xextent=None, pad_to=None, sides=None, 
-             scale_by_freq=None, mode=None, scale=None, vmin=None, vmax=None)
-
-    plt.xlabel('Sample')
-    plt.ylabel('Normalized Frequency')
-    plt.subplot(313)
-
-    #маленький шаг
-    powerSpectrum, freqenciesFound, time, imageAxis = plt.specgram(data, NFFT=None, Fs=None, Fc=None, detrend=None, window=None, 
-             noverlap=0, cmap=None, xextent=None, pad_to=None, sides=None, 
-             scale_by_freq=None, mode=None, scale=None, vmin=None, vmax=None)
-
-    plt.xlabel('Sample')
-    plt.ylabel('Normalized Frequency')
-    plt.show()
-
-
-# Отображение карты вейвлет-коэффициентов
-def plot_swt(data, t_d):
-    plt.figure()
-    coef, freqs = pywt.cwt(data, np.arange(1, 20), 'morl',
-                       sampling_period=t_d)
-    plt.pcolor(range(1, 6401), freqs, coef)
-    plt.show()
-
-
 # Вывод ИХ фильтра по его коэффициентам
 def impz(b, a, name):
-    impulse = [0]*100
-    impulse[0] =1.
-    x = range(100)
-    response = lfilter(b, a, impulse)
+    """
+    Вывести график импульсной характеристики на основе переданного набора коэффициентов 
+    (полюсов) `a` и `b` передаточной функции.
+    
+    Parameters
+    ----------       
+    b : array_like
+        Набор коэффициентов (полюсов) знаменателя передаточной функции.
+    a : array_like
+        Набор коэффициентов (полюсов) числителя передатчоной функции.
+    name : string
+        Название графика.
+    Returns
+    -------
+    Функция создает графики и ничего не возвращает.
+    """
+
+    impulse = [0]*100   # impulse - массив отсчетов входного воздействия на фильтр (импульса).
+                        # [0]*100 - это способ задать 100 одинаковых элементов (в данном
+                        # случае - нулей)
+    impulse[0] =1.  # Один из ста отсчетов будет иметь единичное значение. Получится своеобразный
+                    # импульс.
+    x = range(100)  # Набор значений оси абсцисс для построения графика
+    response = lfilter(b, a, impulse)   # Библиотечная функция вычисления отлика фильтра с полюсами
+                                        # передаточной хар-ки 'a', 'b' на входное воздействие 'impulse'
     plt.stem(x, response)
     plt.ylabel('Amplitude')
     plt.xlabel(r'n (samples)')
@@ -200,29 +187,74 @@ def impz(b, a, name):
 
 # Вывод АЧХ и ФЧХ фильтра по его коэффициентам
 def mfreqz(b, a):
-    w,h = freqz(b, a)
-    h_dB = 20 * np.log10(abs(h))
-    plt.subplot(211)
+    """
+    Вывести графики АЧХ и ФЧХ на основе переданного набора коэффициентов 
+    (полюсов) `a` и `b` передаточной функции. По оси абсцисс откладывается
+    нормированная частота. Функция не используется в исходной части 
+    лабораторной работы, однако студенты могут использовать её при 
+    необходимости.
+    
+    Parameters
+    ----------       
+    b : array_like
+        Набор коэффициентов (полюсов) знаменателя передаточной функции.
+    a : array_like
+        Набор коэффициентов (полюсов) числителя передатчоной функции.
+
+    Returns
+    -------
+    Функция создает графики и ничего не возвращает.
+    """
+    w,h = freqz(b, a)   # Библиотечная функция для определения комплексной частотной
+                        # характеристики h фильтра с полюсами передаточной характеристики
+                        # 'b' и 'a'. W - набор частот, которым соответствуют отсчеты h
+    h_dB = 20 * np.log10(abs(h)) # Перевод КЧХ в логарифмический масштаб
+    
+    plt.subplot(211)    # подграфик для АЧХ
     plt.plot(w/max(w), h_dB)
     plt.ylabel('Magnitude (db)')
     plt.xlabel(r'Normalized Frequency (x$\pi$rad/sample)')
     plt.title(r'Frequency response')
-    plt.grid('on')
+    plt.grid()
     plt.ylim(bottom=-30)
-    plt.subplot(212)
+    
+    plt.subplot(212)    # подграфик для ФЧХ
     h_Phase = np.unwrap(np.arctan2(np.imag(h), np.real(h)))
     plt.plot(w/max(w), h_Phase)
     plt.ylabel('Phase (radians)')
     plt.xlabel(r'Normalized Frequency (x$\pi$rad/sample)')
     plt.title(r'Phase response')
-    plt.grid('on')
+    plt.grid()
+
     plt.subplots_adjust(hspace=1.5)
     plt.show()
 
 
 # Вывод АЧХ и ФЧХ фильтра по его коэффициентам
 def mfreqz3(b, a, names, lims=[0,1]):
+    """
+    Вывести по 3 графика АЧХ и ФЧХ на основе переданного набора коэффициентов 
+    (полюсов) `a` и `b` передаточной функции. Для построения 3 графиков
+    необходимо передать двухмерный массив значений коэффициентов `a` и `b`:
+    [[`коэффициенты первого фильтра`], [`коэффициенты второго фильтра`],
+    [[`коэффициенты третьего фильтра`]]].
+    По оси абсцисс откладывается нормированная частота. Во многом данная
+    функция повторяет логику работы mfreqz(), см. её описание выше.
+    
+    Parameters
+    ----------       
+    b : array_like
+        Набор коэффициентов (полюсов) знаменателя передаточной функции.
+    a : array_like
+        Набор коэффициентов (полюсов) числителя передаточной функции.
+    names : array_like
+        Набор названий фильтров, коэффициенты которых переданы в функцию.
+    Returns
+    -------
+    Функция создает графики и ничего не возвращает.
+    """
     lines = ["-","--","-.",":"]
+    
     plt.subplot(211)
     for i in range(3):
         w, h = freqz(b[i], a[i])
@@ -271,22 +303,22 @@ def generate_sequence(sig_type, t_d, n_chips, t_imp, f_low):
     n_cnts_sig = math.floor(t_imp/t_d)
     if (sig_type == 'chirp'): # тип в/импульс
         f_mod = f_low/5
-        for i in range(0, n_chips):
+        for _ in range(0, n_chips):
             sig = [0] * n_cnts_sig
             sig[:n_cnts_sig] = get_chirp_pulse(t_d, t_imp, 0.96*t_imp, f_low, f_mod)
             res_sig = np.append(res_sig, sig)
+    
     elif (sig_type == 'radio'): # тип р/импульс
-        
         # случайная перестройка для р/импульса
-        for i in range(0, n_chips):
+        for _ in range(0, n_chips):
             sig = [0] * n_cnts_sig
             random_freq = f_low + np.random.randint(5, size=(1))*8/t_imp
             sig[:n_cnts_sig] = get_radio_pulse(t_d, t_imp, 0.96*t_imp, random_freq)
             res_sig = np.append(res_sig, sig)
         
-    elif (sig_type == 'AM'):
+    elif (sig_type == 'AM'): # АМ сигнал
         f_mod = f_low/10
-        for i in range(0, n_chips):
+        for _ in range(0, n_chips):
             sig = [0] * n_cnts_sig
             random_freq = f_low + np.random.randint(5, size=(1))*(3*f_mod)
             sig[:n_cnts_sig] = get_AM(t_d, t_imp, random_freq, f_mod, 0.5)
@@ -312,13 +344,28 @@ def generate_single_chip(signal_type, *signal_data): # запустить фун
 # Функции формирования чипа
 # Формирование в/импульса
 def get_video_pulse(t_d, t_window, t_imp):
-# Ф-я формировнаия в/импульса
-# Аргументы:    
-#   % t_d - период дискретизации, с t_window - период рассмотрения, с
-#   t_imp - длительность импульса, с
+    """
+    Сформировать отсчеты видеоимпульса единичной амплитуды. 
+    Он будет помещен в самом начале "временной" оси.
+    
+    Parameters
+    ----------       
+    t_d : scalar
+        Интервал дискретизации сигнала.
+    t_window : scalar
+        Длительность "окна", в котором наблюдается сигнал.
+    t_imp : scalar
+        Длительность создаваемого импульса.
+    
+    Returns
+    -------
+    signal : array_like
+        Набор отсчетов видеоимпульса.
+    """
+
     n_signal = math.floor(t_window/t_d)  # число отсчетов в рассматриваемом интерв.
     n_imp = math.floor(t_imp/t_d)        # число отсчетов импульса
-    signal = n_signal * [0]            # сформировать пустую выборку
+    signal = [0] * n_signal              # сформировать пустую выборку
     for i in range(0, n_imp):     # поставить первые n_imp отсчетов
         signal[i] = 1
     return signal
@@ -326,43 +373,96 @@ def get_video_pulse(t_d, t_window, t_imp):
 
 # Формирование р/импульса
 def get_radio_pulse(t_d, t_window, t_imp, f_carrier_hz):
-# Ф-я формирования р/импульса
-# Аргументы:
-#   t_d - интервал дискретизации, с    t_window - интервал рассмотрения, с
-#   t_imp - длительность импульса, с   f_carrier_hz - частота несущей, Гц
+    """
+    Сформировать отсчеты радиоимпульса единичной амплитуды. 
+    Он будет помещен в самом начале "временной" оси.
+    
+    Parameters
+    ----------       
+    t_d : scalar
+        Интервал дискретизации сигнала.
+    t_window : scalar
+        Длительность "окна", в котором наблюдается сигнал.
+    t_imp : scalar
+        Длительность создаваемого импульса.
+    f_carrier_hz : scalar
+        Частота несущей, "заполняющей" видеосигнал.
+
+    Returns
+    -------
+    signal : array_like
+        Набор отсчетов радиоимпульса.
+    """
     n_signal = math.floor(t_window/t_d) # число отсчетов в рассматриваемом интерв.
-    n_imp = math.floor(t_imp/t_d)       # число отсчетов импульса
-    pulse_amp = np.zeros(n_signal)
-    for i in range(1, n_imp):     # сформировать огиб.
+    n_imp = math.floor(t_imp/t_d)   # число отсчетов импульса
+    pulse_amp = [0] * n_signal  # сформировать пустую выборку
+    for i in range(1, n_imp):   # сформировать огибающую радиоимпульса
         pulse_amp[i] = 1
-    t_axis = np.linspace(0, t_window, n_signal)   # формирование временной оси
-    carrier = np.sin(2*math.pi*f_carrier_hz*t_axis)    # сформировать несущую
-    signal = pulse_amp*carrier    # несущая на амплитудные значения
+    t_axis = np.linspace(0, t_window, n_signal) # формирование временной оси
+    carrier = np.sin(2*math.pi*f_carrier_hz*t_axis) # сформировать несущую
+    signal = pulse_amp*carrier  # несущая на амплитудные значения
     return signal
 
 
 # Формирование АМ/сигнала
-def get_AM(t_d, t_window, f_carrire_hz, f_mod_hz, i_mod):
-# Ф-я формирования АМ сигнала
-#   t_d - интервал дискретизации, с    t_window - интервал рассмотрения, с
-#   f_carrier_hz - частота несущей, Гц
-#   f_mod_hz - частота модуляции, Гц   i_mod - глубина модуляции (Amin/Amax)
-    n_signal = math.floor(t_window/t_d)                 # число отсчетов в интервале рассмот.
-    t_axis = np.linspace(0, t_window, n_signal)       # ось времени
+def get_AM(t_d, t_window, f_carrier_hz, f_mod_hz, i_mod):
+    """
+    Сформировать отсчеты АМ сигнала.
+    
+    Parameters
+    ----------       
+    t_d : scalar
+        Интервал дискретизации сигнала.
+    t_window : scalar
+        Длительность "окна", в котором наблюдается сигнал.
+    t_imp : scalar
+        Длительность создаваемого импульса.
+    f_carrier_hz : scalar
+        Частота несущей, "заполняющей" видеосигнал.
+    f_mod_hz : scalar
+        Частота модулирующей синусоиды.
+    i_mod : scalar
+        Индекс (глубина) модуляции сигнала
+
+    Returns
+    -------
+    signal : array_like
+        Набор отсчетов АМ сигнала.
+    """
+
+    n_signal = math.floor(t_window/t_d) # число отсчетов в интервале рассмот.
+    t_axis = np.linspace(0, t_window, n_signal) # ось времени
     am_mult = 1/(2/i_mod) 
     am_shift = 1-am_mult    # множитель для расчета огибающей АМ
-    a_modulation = np.sin(2*math.pi*f_mod_hz*t_axis)*am_mult+am_shift  # огибающая
-    signal = np.sin(2*math.pi*f_carrire_hz*t_axis) * a_modulation     # формирование АМ сигнала
+    a_modulation = np.sin(2*math.pi*f_mod_hz*t_axis)*am_mult+am_shift   # огибающая
+    signal = np.sin(2*math.pi*f_carrier_hz*t_axis) * a_modulation   # формирование АМ сигнала
+
     return signal
 
 
 # Формирование ЛЧМ
 def get_chirp_pulse(t_d, t_window, t_imp, f_start_hz, f_chirp_hz):
-# Ф-я формирования р/импульса
-# Аргументы:
-#   t_d - интервал дискретизации, с    t_window - интервал рассмотрения, с
-#   t_imp - длительность импульса, с   f_center_hz - серединная частота, Гц
-#   f_chirp_hz - ширина полосы, Гц
+    """
+    Сформировать отсчеты "ЛЧМ" сигнала (в стадии разработки).
+    
+    Parameters
+    ----------       
+    t_d : scalar
+        Интервал дискретизации сигнала.
+    t_window : scalar
+        Длительность "окна", в котором наблюдается сигнал.
+    t_imp : scalar
+        Длительность создаваемого импульса.
+    f_start_hz : scalar
+        Начальная (и по совместительству - несущая) частота сигнала.
+    f_chirp_hz : scalar
+        Частота девиации.
+
+    Returns
+    -------
+    signal : array_like
+        Набор отсчетов ЛЧМ сигнала.
+    """
     n_signal = math.floor(t_window/t_d)     # число отсчетов в рассматриваемом интерв.
     n_imp = math.floor(t_imp/t_d)           # число отсчетов импульса
     t_axis = np.linspace(0, t_imp, n_imp)   # формирование временной оси
@@ -370,7 +470,7 @@ def get_chirp_pulse(t_d, t_window, t_imp, f_start_hz, f_chirp_hz):
     chirp_sin_arg = f_start_hz + chirp_band/2*t_axis
     signal = [0] * n_signal
     signal[1:n_imp+1] = np.sin(2*math.pi*chirp_sin_arg*t_axis)     # сформировать несущую
-#     signal(n_imp:end) =  sin(2*pi*f_moment(n_imp).*t_axis(n_imp:end))
+    
     return signal
 
 
