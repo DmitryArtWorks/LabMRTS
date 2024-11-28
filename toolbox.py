@@ -290,54 +290,138 @@ def mfreqz3(b, a, names, lims=[0,1]):
 
 # Формирование последовательности чипов
 def generate_sequence(sig_type, t_d, n_chips, t_imp, f_low):
-#Ф-я формирования набора последовательности сигналов перестраиваемых по
-#частоте
-# Аргументы:
-#   sig_type - тип сигнала
-#   t_d - интервал дискретизации
-#   n_chips - число отсетов
-#   f_low - нижняя частота
-#   запустить функцию формирования сигнала в зависимости от заданного типа
-    res_sig = np.array([0])
-    sig = []
-    n_cnts_sig = math.floor(t_imp/t_d)
-    if (sig_type == 'chirp'): # тип в/импульс
-        f_mod = f_low/5
-        for _ in range(0, n_chips):
-            sig = [0] * n_cnts_sig
-            sig[:n_cnts_sig] = get_chirp_pulse(t_d, t_imp, 0.96*t_imp, f_low, f_mod)
-            res_sig = np.append(res_sig, sig)
+    """
+    Сформировать отсчеты последовательности одного из следующих сигналов:
+    радиоимпульс `radio`, АМ сигнал `AM`, ЛЧМ сигнал `chirp`. Функция 
+    представляет собой обертку вокруг функций, которые непосредственно 
+    формируют сигналы. В отличие от generate_single_chip() не создает 
+    видеоимпульс, обладает фиксированным набором входных параметров и 
+    создает отсчеты для нескольких периодов сигнала.
     
+    Parameters
+    ----------       
+    signal_type : 'radio', 'AM', 'chirp'
+        Вид сигнала, отсчеты которого необходимо сформировать.
+    t_d : scalar
+        Интервал дискретизации сигнала.
+    n_chips : scalar
+        Число периодов сигнала, которые необходимо отобразить.
+    t_imp : scalar
+        Длительность огибающей импульса.
+    f_low : scalar
+        Минимальная частотаю Параметр крайне условный, поскольку
+        для каждого сигнала этот затем преобразуется по-разному. 
+
+    Returns
+    -------
+    signal : array_like
+        Набор отсчетов сигнала требуемого типа.
+    
+    Raises
+    -------
+    ValueError
+        Если в аргумент `signal_type `был передан неверный тип сигнала.
+
+    """
+    n_cnts_sig = math.floor(t_imp/t_d)  # Определение числа отсчетов, приходящихся
+                                        # на один из n_chips периодов сигнала.
+
+    res_sig = np.array([0]) # Инициализация выходного массива
+
+    sig = [0] * n_cnts_sig  # инициализация внутренней переменной, необходимой для
+                            # работы выбранного алгоритма формирования последовательности
+                            # импульсов.
+    
+    # Выбор вызываемой функции в зависимости от значения sig_type
+    if (sig_type == 'chirp'): # тип ЛЧМ импульс
+        f_mod = f_low/5
+        for _ in range(0, n_chips): # Цикл по числу периодов
+            sig[:n_cnts_sig] = get_chirp_pulse(t_d, t_imp, 0.96*t_imp, f_low, f_mod)    # формирование отсчетов для одного периода сигнала.
+                                                                                        # `t_window` = t_imp, `t_imp` = 0.96*t_imp, чтобы 
+                                                                                        # импульс был равен ПОЧТИ всему времени наблюдения.
+                                                                                        # Это нужно, чтобы импульсы были визуально различимы 
+                                                                                        # на графике.
+            res_sig = np.append(res_sig, sig)   # конкатенация очередного периода к
+                                                # коцу массива res_sig
+
     elif (sig_type == 'radio'): # тип р/импульс
-        # случайная перестройка для р/импульса
-        for _ in range(0, n_chips):
-            sig = [0] * n_cnts_sig
-            random_freq = f_low + np.random.randint(5, size=(1))*8/t_imp
-            sig[:n_cnts_sig] = get_radio_pulse(t_d, t_imp, 0.96*t_imp, random_freq)
-            res_sig = np.append(res_sig, sig)
+        for _ in range(0, n_chips): # Цикл по числу периодов
+            random_freq = f_low + np.random.randint(5, size=(1))*8/t_imp # случайная частота несущей р/импульса
+            sig[:n_cnts_sig] = get_radio_pulse(t_d, t_imp, 0.96*t_imp, random_freq) # формирование отсчетов для одного периода сигнала.
+                                                                                    # `t_window` = t_imp, `t_imp` = 0.96*t_imp, чтобы 
+                                                                                    # импульс был равен ПОЧТИ всему времени наблюдения.
+                                                                                    # Это нужно, чтобы импульсы были визуально различимы 
+                                                                                    # на графике.
+            res_sig = np.append(res_sig, sig)   # конкатенация очередного периода к
+                                                # коцу массива res_sig
         
     elif (sig_type == 'AM'): # АМ сигнал
         f_mod = f_low/10
-        for _ in range(0, n_chips):
-            sig = [0] * n_cnts_sig
-            random_freq = f_low + np.random.randint(5, size=(1))*(3*f_mod)
-            sig[:n_cnts_sig] = get_AM(t_d, t_imp, random_freq, f_mod, 0.5)
-            res_sig = np.append(res_sig, sig)
-    res_sig = np.delete(res_sig, 0)
+        for _ in range(0, n_chips): # Цикл по числу периодов
+            random_freq = f_low + np.random.randint(5, size=(1))*(3*f_mod) # случайная частота несущей АМ сигнала
+            sig[:n_cnts_sig] = get_AM(t_d, t_imp, random_freq, f_mod, 0.5) # формирование отсчетов для одного периода сигнала.
+            res_sig = np.append(res_sig, sig)   # конкатенация очередного периода к
+                                                # коцу массива res_sig
+    else:
+        raise ValueError("Введён неверный тип сигнала. Допустимы значения: 'video', 'radio', 'AM', 'chirp'")
     
+    res_sig = np.delete(res_sig, 0) # удаление нулевого отсчета сигнала, который использовался для инициализации массива
+        
     return res_sig
 
 
 # Формирование сигналов (управляющая функция)
 def generate_single_chip(signal_type, *signal_data): # запустить функцию формирования сигнала в зависимости от заданного типа
+    """
+    Сформировать отсчеты одного периода одного из следующих сигналов:
+    видеоимпульс `video`, радиоимпульс `radio`, АМ сигнал `AM`, ЛЧМ 
+    сигнал `chirp`. Для каждого из видов сигнала необходимо передать 
+    в функцию разный набор параметров. Функция представляет собой 
+    обертку вокруг функций, которые непосредственно формируют сигналы.
+    
+    Parameters
+    ----------       
+    signal_type : 'video', 'radio', 'AM', 'chirp'
+        Вид сигнала, отсчеты которого необходимо сформировать.
+    *signal_data : list of scalars ####################################### TODO: Мне не нравится, как я это назвал. По сути же передается не list, а просто последовательность несвязанных переменных
+        Набор параметров, которые необходимо передать для формирования
+        требуемого вида сигнала. 
+        Для видеоимпульса 'video': `t_d`, `t_window`, `t_imp`;
+        Для радиоимпульса 'radio': `t_d`, `t_window`, `t_imp`, `f_carrier_hz`;
+        Для AM: `t_d`, `t_window`, 'f_carrier_hz', `f_mod_hz`, `i_mod`;
+        Для ЛЧМ: `t_d`, `t_window`, `t_imp`, `f_start_hz`, `f_chirp_hz`,
+        где 
+            `t_d` - интервал дискретизации сигнала;
+            `t_window` - интервал наблюдения сигнала;
+            `t_imp` - длительность огибающей импульса;
+            `f_carrier_hz` - частота заполнения сигнала;
+            `f_mod_hz` - частота модулирующего сигнала;
+            `i_mod` - глубина модуляции (индекс модуляции);
+            `f_start_hz` - центральная частота ЛЧМ сигнала;
+            `f_chirp_hz` - частота девиации ЛЧМ сигнала.
+    Returns
+    -------
+    signal : array_like
+        Набор отсчетов сигнала требуемого типа.
+    
+    Raises
+    -------
+    ValueError
+        Если в аргумент `signal_type `был передан неверный тип сигнала.
+
+    """
+    # Выбор вызываемой функции в зависимости от значения sig_type
     if (signal_type == 'video'):    # тип в/импульс
         signal = get_video_pulse(*signal_data)
-    elif (signal_type == 'radio'):    # тип р/импульс
+    elif (signal_type == 'radio'):  # тип р/импульс
         signal = get_radio_pulse(*signal_data)
-    elif (signal_type == 'AM'):    # тип АМ сигнал  
+    elif (signal_type == 'AM'): # тип АМ сигнал  
         signal = get_AM(*signal_data)
-    elif (signal_type == 'chirp'):
+    elif (signal_type == 'chirp'):  # тип ЛЧМ сигнал
         signal = get_chirp_pulse(*signal_data)
+    else:
+        raise ValueError("Введён неверный тип сигнала. Допустимы значения: 'video', 'radio', 'AM', 'chirp'")
+    
     return signal
 
 
