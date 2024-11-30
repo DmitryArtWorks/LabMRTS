@@ -173,9 +173,11 @@ def impz(b, a, name):
     x = range(100)  # Набор значений оси абсцисс для построения графика
     response = lfilter(b, a, impulse)   # Библиотечная функция вычисления отлика фильтра с полюсами
                                         # передаточной хар-ки 'a', 'b' на входное воздействие 'impulse'
+    plt.figure()
     plt.stem(x, response)
     plt.ylabel('Amplitude')
     plt.xlabel(r'n (samples)')
+    plt.grid()
     plt.title(name)
     plt.show()
 
@@ -249,7 +251,7 @@ def mfreqz3(b, a, names, lims=[0,1]):
     Функция создает графики и ничего не возвращает.
     """
     lines = ["-","--","-.",":"]
-    
+    plt.figure()
     plt.subplot(211)
     for i in range(3):
         w, h = freqz(b[i], a[i])
