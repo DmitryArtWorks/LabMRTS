@@ -3,6 +3,74 @@ import pywt
 from matplotlib import pyplot as plt
 
 
+# Отображение сигналов
+def plot_signal(signal_args):
+    """
+    Вывести действительную часть сигнала, в случае необходимости вывода
+    нескольких линий на один график, они передаются в качестве второй
+    размерности массива, типа: [[`signal_args` первой линии], 
+    [`signal_args` второй линии]]. Одинаковая размерность не обязательна.
+    В зависимости от числа переданных аргументов (размерности `signal_args`), 
+    функция распознает их следующим образом:
+
+    Parameters
+    ----------
+    signal_args : array_like
+                  Значения по оси ординат (ось OY). В таком случае по оси абсцис (ось OX)
+                  будут отложены номера отсчетов.
+    signal_args : [array_like or scalar, array_like]
+                  Набор значений оси абсцисс или частота дискретизации 
+                  в качестве первого аргумента. Значения амплитуд для 
+                  оси ординат - в качестве второго.
+    signal_args : [array_like or scalar, array_like, string]
+                  Первые два аргумента подразумеваются такими же, что и для случая выше. В
+                  качестве третьего аргумента передается название линии (пишется в легенде).
+    
+    Returns
+    -------
+    Функция создает графики и ничего не возвращает.
+
+    Raises
+    ------
+    ValueError:
+        Если в функцию было передано неверное число аргументов.
+    """
+
+    lines = ["-", "--", "-.", ":"] # Список возможных стилей линий графиков
+    leg = []
+    plt.figure()
+    for i in range (len(signal_args)):  # Цикл по числу линий, переданных в функцию
+        
+        args_len = len(signal_args[i])  # Определяем, сколько аргументов передано для i-ой линии.
+        if (args_len > 3 or args_len < 1): # Если аргументов оказалось не столько, сколько ожидалось.
+            raise TypeError('Ошибка ввода. Неверное число аргументов (допускается от 1 до 3 аргументов)')
+        if (args_len == 1): # Ветка для случая, когда был передан один аргумент (набор значений оси ординат)
+            signal = signal_args[i][0]
+            x_axis = range(0, len(signal))
+        if (args_len == 2 or args_len == 3):
+            signal = signal_args[i][1]
+            if (type(signal_args[i][0]) == float): # Если в качестве первого аргумента передан шаг дискретизации
+                x_axis = np.arange(0, signal_args[i][0]*(len(signal)), signal_args[i][0])
+            else:
+                x_axis = signal_args[i][1]                
+    
+        # Построение i-й линии        
+        plt.plot(x_axis*1e6, np.real(signal), linestyle=lines[i])
+        
+        if (args_len == 3):
+            leg.append(signal_args[i][2])
+        else:
+            leg.append('Unnamed signal ' + str(i))  # Если не нравится, можно заменить 
+                                                    # содержимое скобок на " ". Работает
+                                                    # тоже красиво
+        
+    plt.legend(leg)
+    plt.title('Исходный сигнал')
+    plt.xlabel("t, мкc") # ось абсцисс
+    plt.grid()
+    plt.show()
+
+
 def plot_spectrogram(signal, window_name: str, window_offset_step: int, window_opt_len=8):
     """
     Функция позволяет построить спектрограмму сигнала при различных параметрах окна.
