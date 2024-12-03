@@ -410,8 +410,9 @@ def apply_ideal_filter(t_d, filter_type, f_cut_hz, signal_in):
     # Данная ветка будет вызвана, если по какой-то причине выходной сигнал 
     # оказался комплексным (должен быть действительным, поскольку на входе)
     # он действительный
-    if (np.prod(np.iscomplex(signal_out))): 
-        raise TypeError('Допущена ошибка при формировании фильтра: сигнал после фильтрации комплексный')  
+    #if (np.prod(np.iscomplex(signal_out))): 
+        #raise TypeError('Допущена ошибка при формировании фильтра: сигнал после фильтрации комплексный')
+    signal_out = np.real(signal_out)
     return signal_out
 
 

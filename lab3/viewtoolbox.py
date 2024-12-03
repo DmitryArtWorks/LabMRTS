@@ -140,7 +140,7 @@ def plot_spectum(signal_args):
             
         plt.plot(f_axis, fftshift(abs(signal_spectrum)), label=line_label)  # построение i-й линии
     plt.title("Спектр") # заголовок
-    plt.xlabel("Частота, МГц") # ось абсцисс        
+    plt.xlabel("Частота, МГц") # ось абсцисс       
     plt.legend()
     plt.grid()
     plt.show()
@@ -262,7 +262,7 @@ def mfreqz3(b, a, names, lims=[0,1]):
     plt.xlabel(r'Normalized Frequency (x$\pi$rad/sample)')
     plt.title(r'Frequency response')
     plt.grid('on')
-    plt.ylim(top=1, bottom=-30)
+    plt.ylim(top=1)
     plt.xlim(lims[0], lims[1])
     
     plt.subplot(212)
