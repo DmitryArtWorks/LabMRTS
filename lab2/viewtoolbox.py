@@ -1,5 +1,4 @@
 import numpy as np
-from numpy.random import normal
 from numpy.fft import fft
 from numpy.fft import fftshift
 import matplotlib.pyplot as plt

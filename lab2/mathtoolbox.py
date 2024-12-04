@@ -1,57 +1,43 @@
 import numpy as np
-from numpy.random import normal
 from numpy.fft import fft
 from numpy.fft import ifft
+from typing import Callable
 
 
-def apply_corr_filter(sig, time_window: int | float, corr_us: int | float, n_var: int):
-   """
-   Функция позволяет получить коррелированные отсчёты процесса при условии, 
-   что на вход подается некоррелированная числовая последовательность.
+def apply_corr_filter(sig: np.ndarray, 
+                      time_window: int | float, 
+                      r_fun: Callable[[np.ndarray, int | float], np.ndarray], 
+                      corr_us: int | float) -> np.ndarray:
+    """
+    Функция позволяет получить коррелированные отсчёты процесса при условии, 
+    что на вход подается некоррелированная числовая последовательность.
 
-   Parametrs
-   ---------
-   sig : array_like
-         Отсчёты некоррелированного процесса.
-   time_window : int, float
-         Длительность числовой последовательности, мкс.
-   corr_us : int, float
-         Длительность интервала корреляции, мкс.
-   n_var : int
-         Номер варианта.
+    Parametrs
+    ---------
+    sig : array_like
+            Отсчёты некоррелированного процесса.
+    time_window : int, float
+            Длительность числовой последовательности, мкс.
+    r_fun : [[array_like, int | float], array_like]
+            Корреляционная функция, заданная как функция от двух переменных.
+    corr_us : int, float
+            Длительность интервала корреляции, мкс.
 
-   Returns
-   -------
-   Функция возвращает отсчёты коррелированного случайного процесса.
+    Returns
+    -------
+    Функция возвращает отсчёты коррелированного случайного процесса.
+    """
+    signal_length = sig.shape[1]
+    x = np.linspace(-time_window/2, time_window/2, signal_length)
 
-   Raises
-   ------
-   ValueError
-         Если в функцию было передано неверное значение варианта.
-   """
-   signal_length = sig.shape[1]
-   x = np.linspace(-time_window/2, time_window/2, signal_length)
+    corr_func_counts = r_fun(x, corr_us)    # отсчеты КФ
 
-   # Целевая корреляционная функция
-   if n_var == 0:
-      corr_func = np.exp(-abs(x) / corr_us) ** 2
-   elif n_var == 1:
-      corr_func = np.exp(-(x/corr_us)**2)
-   elif n_var == 2:
-      corr_func = (1 - abs(x)/corr_us) * (np.abs(x) <= corr_us)
-   elif n_var == 3:
-      corr_func = np.cos(10*x/corr_us) * np.exp(-1/2*(x/corr_us)**2)
-   elif n_var == 4:
-      corr_func = 1 / (1 + (x/corr_us)**2)
-   else:
-      raise ValueError("Неправильно задан номер варианта!!!")
+    filter_freq_resp = np.sqrt(fft(corr_func_counts, signal_length))    # АЧХ фильтра (вычисляется с помощью БПФ от КФ)
+    spectrum_corr_sig = fft(sig, signal_length) * filter_freq_resp    # спектр процесса на выходе фильтра
+    # Получение отсчетов коррелированого процесса (с помощью ОБПФ)
+    corr_sig = np.real(np.sqrt(2)*ifft(spectrum_corr_sig, signal_length))
 
-   filter_freq_resp = np.sqrt(np.fft.fft(corr_func, signal_length))    # АЧХ фильтра (вычисляется с помощью БПФ от КФ)
-   spectrum_corr_sig = fft(sig, signal_length) * filter_freq_resp    # спектр процесса на выходе фильтра
-   # Получение отсчетов коррелированого процесса (с помощью ОБПФ)
-   corr_sig = np.real(np.sqrt(2)*ifft(spectrum_corr_sig, signal_length))
-
-   return corr_sig
+    return corr_sig
 
 
 def calculate_correlate(proc, n_counts: int, n_samples: int):
@@ -85,44 +71,30 @@ def calculate_correlate(proc, n_counts: int, n_samples: int):
     return r_sample, r_est
 
 
-def get_corr_func(corr_int: int | float, time_window: int | float, n_counts: int, n_var: int):
+def get_corr_func(r_fun: Callable[[np.ndarray, int | float], np.ndarray], 
+                  corr_int: int | float, 
+                  time_window: int | float, 
+                  n_counts: int) -> np.ndarray:
     """
     Функция позволяет получить отсчёты теоретической корреляционной функции.
 
     Parametrs
     ---------
+    r_fun : [[array_like, int | float], array_like]
+            Корреляционная функция, заданная как функция от двух переменных.
     corr_int : int, float
             Длительность интервала корреляции, мкс.
     time_window : int, float
             Временной интервал, на котором рассматривается корреляция, мкс.
     n_counts : int
             Число отсчётов.
-    n_var : int
-            Номер варианта.
 
     Returns
     -------
     Функция возвращает отсчёты теоретической коррелированной функции.
-
-    Raises
-    ------
-    ValueError
-            Если в функцию было передано неверное значение варианта.
     """
     shift_axis_us = np.linspace(-time_window, time_window, 2*n_counts-1)    # ось отстройки КФ
 
-    # Теоретическая КФ в зависимости от варинта
-    if n_var == 0:
-        r_fun = np.exp(-abs(shift_axis_us) / (corr_int / 2))
-    elif n_var == 1:
-        r_fun = np.exp(-(shift_axis_us/corr_int)**2)
-    elif n_var == 2:
-        r_fun = (1 - abs(shift_axis_us)/corr_int) * (np.abs(shift_axis_us) <= corr_int)
-    elif n_var == 3:
-        r_fun = np.cos(10*shift_axis_us/corr_int) * np.exp(-1/2*(shift_axis_us/corr_int)**2)
-    elif n_var == 4:
-        r_fun = 1 / (1 + (shift_axis_us/corr_int)**2)
-    else:
-      raise ValueError("Неправильно задан номер варианта!!!")
+    corr_func_counts = r_fun(shift_axis_us, corr_int)   # отсчеты КФ
     
-    return r_fun
+    return corr_func_counts
