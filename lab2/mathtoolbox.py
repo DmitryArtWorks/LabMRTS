@@ -78,7 +78,8 @@ def calculate_correlate(proc, n_counts: int, n_samples: int):
     # Расчет усредненной нормированной КФ одной реализации
     r_est = np.zeros((n_samples, 2*n_counts-1))
     for i in range(n_samples):
-        r_est[i,:] = np.correlate(proc[i,:], proc[i,:], mode='full') / np.var(proc[i,:]) / n_counts
+        r_est[i,:] = np.correlate(proc[i,:], proc[i,:], mode='full')
+        r_est[i,:] /= np.max(r_est[i,:])    # нормировка КФ
     r_est = np.mean(r_est, axis=0)    # усреднение КФ по множеству реализаций
 
     return r_sample, r_est
