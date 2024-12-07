@@ -4,98 +4,17 @@ from scipy.fft import fft, ifft
 from scipy.signal import butter, lfilter, cheby2, cheby1
 
 
-""" Генерация импульсов 
-Функции генерации последовательности импульсов и одиночного импульса
-"""
+# # # # # # # # # # # # # # #
+# Формирование одного чипа* #
+# (функция-обертка)         #
+# # # # # # # # # # # # # # #
 
+# *чип - один период модулирующего сигнала (в рамках данной ЛР)
 
-# Формирование последовательности чипов
-def generate_sequence(sig_type, t_d, n_chips, t_imp, f_low):
-    """
-    Сформировать отсчеты последовательности одного из следующих сигналов:
-    радиоимпульс `radio`, АМ сигнал `AM`, ЛЧМ сигнал `chirp`. Функция 
-    представляет собой обертку вокруг функций, которые непосредственно 
-    формируют сигналы. В отличие от generate_single_chip() не создает 
-    видеоимпульс, обладает фиксированным набором входных параметров и 
-    создает отсчеты для нескольких периодов сигнала.
-    
-    Parameters
-    ----------       
-    signal_type : 'radio', 'AM', 'chirp'
-        Вид сигнала, отсчеты которого необходимо сформировать.
-    t_d : scalar
-        Интервал дискретизации сигнала.
-    n_chips : scalar
-        Число периодов сигнала, которые необходимо отобразить.
-    t_imp : scalar
-        Длительность огибающей импульса.
-    f_low : scalar
-        Минимальная частотаю Параметр крайне условный, поскольку
-        для каждого сигнала этот затем преобразуется по-разному. 
-
-    Returns
-    -------
-    signal : array_like
-        Набор отсчетов сигнала требуемого типа.
-    
-    Raises
-    -------
-    ValueError
-        Если в аргумент `signal_type `был передан неверный тип сигнала.
-
-    """
-    n_cnts_sig = math.floor(t_imp/t_d)  # Определение числа отсчетов, приходящихся
-                                        # на один из n_chips периодов сигнала.
-
-    res_sig = np.array([0]) # Инициализация выходного массива
-
-    sig = [0] * n_cnts_sig  # инициализация внутренней переменной, необходимой для
-                            # работы выбранного алгоритма формирования последовательности
-                            # импульсов.
-    
-    # Выбор вызываемой функции в зависимости от значения sig_type
-    if (sig_type == 'chirp'): # тип ЛЧМ импульс
-        f_mod = f_low/5
-        for _ in range(0, n_chips): # Цикл по числу периодов
-            sig[:n_cnts_sig] = get_chirp_pulse(t_d, t_imp, 0.96*t_imp, f_low, f_mod)    # формирование отсчетов для одного периода сигнала.
-                                                                                        # `t_window` = t_imp, `t_imp` = 0.96*t_imp, чтобы 
-                                                                                        # импульс был равен ПОЧТИ всему времени наблюдения.
-                                                                                        # Это нужно, чтобы импульсы были визуально различимы 
-                                                                                        # на графике.
-            res_sig = np.append(res_sig, sig)   # конкатенация очередного периода к
-                                                # коцу массива res_sig
-
-    elif (sig_type == 'radio'): # тип р/импульс
-        for _ in range(0, n_chips): # Цикл по числу периодов
-            random_freq = f_low + np.random.randint(5, size=(1))*8/t_imp # случайная частота несущей р/импульса
-            sig[:n_cnts_sig] = get_radio_pulse(t_d, t_imp, 0.96*t_imp, random_freq) # формирование отсчетов для одного периода сигнала.
-                                                                                    # `t_window` = t_imp, `t_imp` = 0.96*t_imp, чтобы 
-                                                                                    # импульс был равен ПОЧТИ всему времени наблюдения.
-                                                                                    # Это нужно, чтобы импульсы были визуально различимы 
-                                                                                    # на графике.
-            res_sig = np.append(res_sig, sig)   # конкатенация очередного периода к
-                                                # коцу массива res_sig
-        
-    elif (sig_type == 'AM'): # АМ сигнал
-        f_mod = f_low/10
-        for _ in range(0, n_chips): # Цикл по числу периодов
-            random_freq = f_low + np.random.randint(5, size=(1))*(3*f_mod) # случайная частота несущей АМ сигнала
-            sig[:n_cnts_sig] = get_AM(t_d, t_imp, random_freq, f_mod, 0.5) # формирование отсчетов для одного периода сигнала.
-            res_sig = np.append(res_sig, sig)   # конкатенация очередного периода к
-                                                # коцу массива res_sig
-    else:
-        raise ValueError("Введён неверный тип сигнала. Допустимы значения: 'video', 'radio', 'AM', 'chirp'")
-    
-    res_sig = np.delete(res_sig, 0) # удаление нулевого отсчета сигнала, который использовался для инициализации массива
-        
-    return res_sig
-
-
-# Формирование сигналов (управляющая функция)
-def generate_single_chip(signal_type, *signal_data): # запустить функцию формирования сигнала в зависимости от заданного типа
+def generate_single_chip(signal_type, *signal_data):
     """
     Сформировать отсчеты одного периода одного из следующих сигналов:
-    видеоимпульс `video`, радиоимпульс `radio`, АМ сигнал `AM`, ЛЧМ 
+    видеоимпульс `video`, радиоимпульс `radio`, АМ-сигнал `AM`, ЛЧМ- 
     сигнал `chirp`. Для каждого из видов сигнала необходимо передать 
     в функцию разный набор параметров. Функция представляет собой 
     обертку вокруг функций, которые непосредственно формируют сигналы.
@@ -104,7 +23,7 @@ def generate_single_chip(signal_type, *signal_data): # запустить фун
     ----------       
     signal_type : 'video', 'radio', 'AM', 'chirp'
         Вид сигнала, отсчеты которого необходимо сформировать.
-    *signal_data : list of scalars ####################################### TODO: Мне не нравится, как я это назвал. По сути же передается не list, а просто последовательность несвязанных переменных
+    *signal_data : number of scalars
         Набор параметров, которые необходимо передать для формирования
         требуемого вида сигнала. 
         Для видеоимпульса 'video': `t_d`, `t_window`, `t_imp`;
@@ -118,8 +37,8 @@ def generate_single_chip(signal_type, *signal_data): # запустить фун
             `f_carrier_hz` - частота заполнения сигнала;
             `f_mod_hz` - частота модулирующего сигнала;
             `i_mod` - глубина модуляции (индекс модуляции);
-            `f_start_hz` - центральная частота ЛЧМ сигнала;
-            `f_chirp_hz` - частота девиации ЛЧМ сигнала.
+            `f_start_hz` - центральная частота ЛЧМ-сигнала;
+            `f_chirp_hz` - частота девиации ЛЧМ-сигнала.
     Returns
     -------
     signal : array_like
@@ -131,14 +50,15 @@ def generate_single_chip(signal_type, *signal_data): # запустить фун
         Если в аргумент `signal_type `был передан неверный тип сигнала.
 
     """
+
     # Выбор вызываемой функции в зависимости от значения sig_type
     if (signal_type == 'video'):    # тип в/импульс
         signal = get_video_pulse(*signal_data)
     elif (signal_type == 'radio'):  # тип р/импульс
         signal = get_radio_pulse(*signal_data)
-    elif (signal_type == 'AM'): # тип АМ сигнал  
+    elif (signal_type == 'AM'): # тип АМ-сигнал  
         signal = get_AM(*signal_data)
-    elif (signal_type == 'chirp'):  # тип ЛЧМ сигнал
+    elif (signal_type == 'chirp'):  # тип ЛЧМ-сигнал
         signal = get_chirp_pulse(*signal_data)
     else:
         raise ValueError("Введён неверный тип сигнала. Допустимы значения: 'video', 'radio', 'AM', 'chirp'")
@@ -146,8 +66,11 @@ def generate_single_chip(signal_type, *signal_data): # запустить фун
     return signal
 
 
-# Функции формирования чипа
-# Формирование в/импульса
+# # # # # # # # # # # # # # #
+# Функции формирования чипа #
+# # # # # # # # # # # # # # #
+
+# Формирование одного периода в/импульса
 def get_video_pulse(t_d, t_window, t_imp):
     """
     Сформировать отсчеты видеоимпульса единичной амплитуды. 
@@ -171,12 +94,12 @@ def get_video_pulse(t_d, t_window, t_imp):
     n_signal = math.floor(t_window/t_d)  # число отсчетов в рассматриваемом интерв.
     n_imp = math.floor(t_imp/t_d)        # число отсчетов импульса
     signal = [0] * n_signal              # сформировать пустую выборку
-    for i in range(0, n_imp):     # поставить первые n_imp отсчетов
+    for i in range(0, n_imp):   # первые n_imp отсчетов имеют единичную амплитуду.
         signal[i] = 1
     return signal
 
 
-# Формирование р/импульса
+# Формирование одного периода р/импульса
 def get_radio_pulse(t_d, t_window, t_imp, f_carrier_hz):
     """
     Сформировать отсчеты радиоимпульса единичной амплитуды. 
@@ -198,6 +121,7 @@ def get_radio_pulse(t_d, t_window, t_imp, f_carrier_hz):
     signal : array_like
         Набор отсчетов радиоимпульса.
     """
+    
     n_signal = math.floor(t_window/t_d) # число отсчетов в рассматриваемом интерв.
     n_imp = math.floor(t_imp/t_d)   # число отсчетов импульса
     pulse_amp = [0] * n_signal  # сформировать пустую выборку
@@ -209,10 +133,10 @@ def get_radio_pulse(t_d, t_window, t_imp, f_carrier_hz):
     return signal
 
 
-# Формирование АМ/сигнала
+# Формирование одного периода АМ-сигнала
 def get_AM(t_d, t_window, f_carrier_hz, f_mod_hz, i_mod):
     """
-    Сформировать отсчеты АМ сигнала.
+    Сформировать отсчеты АМ-сигнала.
     
     Parameters
     ----------       
@@ -232,7 +156,7 @@ def get_AM(t_d, t_window, f_carrier_hz, f_mod_hz, i_mod):
     Returns
     -------
     signal : array_like
-        Набор отсчетов АМ сигнала.
+        Набор отсчетов АМ-сигнала.
     """
 
     n_signal = math.floor(t_window/t_d) # число отсчетов в интервале рассмот.
@@ -240,15 +164,15 @@ def get_AM(t_d, t_window, f_carrier_hz, f_mod_hz, i_mod):
     am_mult = 1/(2/i_mod) 
     am_shift = 1-am_mult    # множитель для расчета огибающей АМ
     a_modulation = np.sin(2*math.pi*f_mod_hz*t_axis)*am_mult+am_shift   # огибающая
-    signal = np.sin(2*math.pi*f_carrier_hz*t_axis) * a_modulation   # формирование АМ сигнала
+    signal = np.sin(2*math.pi*f_carrier_hz*t_axis) * a_modulation   # формирование АМ-сигнала
 
     return signal
 
 
-# Формирование ЛЧМ
+# Формирование одного периода ЛЧМ-сигнала
 def get_chirp_pulse(t_d, t_window, t_imp, f_start_hz, f_chirp_hz):
     """
-    Сформировать отсчеты "ЛЧМ" сигнала (в стадии разработки).
+    Сформировать отсчеты ЛЧМ-сигнала (в разработке).
     
     Parameters
     ----------       
@@ -266,22 +190,25 @@ def get_chirp_pulse(t_d, t_window, t_imp, f_start_hz, f_chirp_hz):
     Returns
     -------
     signal : array_like
-        Набор отсчетов ЛЧМ сигнала.
+        Набор отсчетов ЛЧМ-сигнала.
     """
-    n_signal = math.floor(t_window/t_d)     # число отсчетов в рассматриваемом интерв.
-    n_imp = math.floor(t_imp/t_d)           # число отсчетов импульса
+
+    n_signal = math.floor(t_window/t_d) # число отсчетов в рассматриваемом интерв.
+    n_imp = math.floor(t_imp/t_d)   # число отсчетов импульса
     t_axis = np.linspace(0, t_imp, n_imp)   # формирование временной оси
-    chirp_band = f_chirp_hz/t_imp
-    chirp_sin_arg = f_start_hz + chirp_band/2*t_axis
-    signal = [0] * n_signal
-    signal[1:n_imp+1] = np.sin(2*math.pi*chirp_sin_arg*t_axis)     # сформировать несущую
+    chirp_band = f_chirp_hz/t_imp   # Определение полосы ЛЧМ-сигнала
+    chirp_sin_arg = f_start_hz + chirp_band/2*t_axis    # Множитель аргумента в функции
+                                                        # синусоиды
+    signal = [0] * n_signal # Инициализация массива выходных значений требуемого
+                            # размера
+    signal[1:n_imp+1] = np.sin(2*math.pi*chirp_sin_arg*t_axis)  # сформировать несущую
     
     return signal
 
 
-""" Фильтры 
-"""
-
+# # # # # # # # # # # #
+# Функции фильтрации  #
+# # # # # # # # # # # #
 
 # Применить к сигналу фильтр с "идеальной" АЧХ
 def apply_ideal_filter(t_d, filter_type, f_cut_hz, signal_in):
@@ -446,7 +373,9 @@ def apply_butt_filter(t_d, filter_type, f_cut_hz, filter_order, signal_in):
     Функция возвращает отсчеты сигнала `signal_in` после прохождения через фильтр
     Баттерворта типа `filter_type`.         
     """
-    # формирование коэффициентов числителя и знаменателя фильтра Баттерворта
+
+    # Формирование коэффициентов числителя и знаменателя 
+    # передаточной функции фильтра Баттерворта
     b, a = create_butt_filter(t_d, filter_type, f_cut_hz, filter_order)  
     
     signal_out = lfilter(b, a, signal_in)   # фильтрация сигнала
@@ -482,9 +411,12 @@ def apply_cheb2_filter(t_d, filter_type, f_cut_hz, filter_order, bnd_att_db, sig
     Returns
     -------
     Функция возвращает отсчеты сигнала `signal_in` после прохождения через фильтр
-    Баттерворта типа `filter_type`.         
+    Чебышева II рода типа `filter_type`.         
     """
-    b, a = create_cheb2_filter(t_d, filter_type, f_cut_hz, filter_order, bnd_att_db)    # формирование фильтра
+
+    # Формирование коэффициентов числителя и знаменателя 
+    # передаточной функции фильтра Чебышева II рода
+    b, a = create_cheb2_filter(t_d, filter_type, f_cut_hz, filter_order, bnd_att_db)
     
     signal_out = lfilter(b, a, signal_in)   # фильтрация сигнала
     return signal_out
@@ -523,34 +455,41 @@ def create_butt_filter(t_d, filter_type, f_cut_hz, filter_order):
     ValueError: 
         Если введён неправильный тип фильтра.     
     """
+
     # Ветка условий конвертирует обозначения фильтров, которые используются
     # в лабе, в значения, требующиеся библиотечной функции.
-    if (isinstance(f_cut_hz, float or int)):    # если передано одно зачение частоты среза, то:
+    if isinstance(f_cut_hz, float or int):  # если передано одно зачение частоты среза, то:
         if (filter_type == 'LP'):
             f_name = 'lowpass'  # НЧ фильтр
         elif (filter_type == 'HP'):
             f_name = 'highpass' # ВЧ фильтр
         else:
+            # если передано неправильное название фильтра
             raise ValueError('Ошибка вввода: Тип фильтра')
-    elif (isinstance(f_cut_hz, list)):  # если передано два значения частот среза, то:
+
+    elif (isinstance(f_cut_hz, list)): # если передано несколько значений частот среза, то:
         if (filter_type == 'BP'):
-            f_name = 'bandpass' # Полосовой фильтр
+            f_name = 'bandpass' # полосовой фильтр
         elif (filter_type == 'BS'):
-            f_name = 'bandstop' # Заградительный фильтр
+            f_name = 'bandstop' # заградительный фильтр
         else:
+            # если передано неправильное название фильтра
             raise ValueError('Ошибка вввода: Тип фильтра')
+
     else:
-        raise ValueError('Ошибка ввода: Граничные частоты фильтра')
+        # Если что-то не так с переданными частотами среза фильтра
+        raise ValueError('Ошибка ввода: Граничные частоты фильтра') 
     
     f_d = 1/t_d # частота дискретизации
     w_n = np.array(f_cut_hz)/(f_d/2)    # нормированная частота среза.
                                         # Нужна для работы библиотечной функции
-    b, a = butter(filter_order, w_n, f_name)    # формирование коэффициентов фильтра Баттерворта
-                                                # с помощью библиотечной функции.
+    b, a = butter(filter_order, w_n, f_name)    # формирование коэффициентов числителя и знаменателя 
+                                                # передаточной функции фильтра Баттерворта с использованием
+                                                # библиотечной функции
     return b, a
 
 
-# Расчет коэффициентов Фильтра Чебышева
+# Расчет коэффициентов Фильтра Чебышева II рода
 def create_cheb2_filter(t_d, filter_type, f_cut_hz, filter_order, bnd_att_db):
     """
     Определить коэффициенты передаточной функции фильтра, описываемого полиномом
@@ -584,25 +523,30 @@ def create_cheb2_filter(t_d, filter_type, f_cut_hz, filter_order, bnd_att_db):
     ValueError: 
         Если введён неправильный тип фильтра.     
     """
+
     # Ветка условий конвертирует обозначения фильтров, которые используются
     # в лабе, в значения, требующиеся библиотечной функции.
-    if isinstance(f_cut_hz, float or int):      # если передано одно зачение частоты среза, то:
+    if isinstance(f_cut_hz, float or int):  # если передано одно зачение частоты среза, то:
         if (filter_type == 'LP'):
             f_name = 'lowpass'  # НЧ фильтр
         elif (filter_type == 'HP'):
             f_name = 'highpass' # ВЧ фильтр
         else:
-            raise ValueError('Ошибка вввода: Тип фильтра') # если передано два значения частот среза
-    elif (isinstance(f_cut_hz, list)):
+            # если передано неправильное название фильтра
+            raise ValueError('Ошибка вввода: Тип фильтра')
+
+    elif (isinstance(f_cut_hz, list)): # если передано несколько значений частот среза, то:
         if (filter_type == 'BP'):
             f_name = 'bandpass' # полосовой фильтр
         elif (filter_type == 'BS'):
             f_name = 'bandstop' # заградительный фильтр
         else:
+            # если передано неправильное название фильтра
             raise ValueError('Ошибка вввода: Тип фильтра')
 
     else:
-        raise ValueError('Ошибка ввода: Граничные частоты фильтра')
+        # Если что-то не так с переданными частотами среза фильтра
+        raise ValueError('Ошибка ввода: Граничные частоты фильтра') 
 
     f_d = 1/t_d # частота дискретизации, Гц
     w_n = np.array(f_cut_hz)/(f_d/2)    # нормированная частота среза (w/w_d). Нужна 
@@ -611,6 +555,7 @@ def create_cheb2_filter(t_d, filter_type, f_cut_hz, filter_order, bnd_att_db):
     return b, a
 
 
+# Расчет коэффициентов Фильтра Чебышева I рода
 def create_cheb1_filter(t_d, filter_type, f_cut_hz, filter_order, bnd_att_db):
     """
     Определить коэффициенты передаточной функции фильтра, описываемого полиномом
@@ -642,30 +587,36 @@ def create_cheb1_filter(t_d, filter_type, f_cut_hz, filter_order, bnd_att_db):
     Raises
     -------
     ValueError: 
-        Если введён неправильный тип фильтра.     
+        Если введён неправильный тип фильтра или список частот.     
     """
+
     # Ветка условий конвертирует обозначения фильтров, которые используются
     # в лабе, в значения, требующиеся библиотечной функции.
-    if isinstance(f_cut_hz, float):      # если передано одно зачение частоты среза
+    if isinstance(f_cut_hz, float or int):  # если передано одно зачение частоты среза, то:
         if (filter_type == 'LP'):
-            f_name = 'lowpass'           # НЧ фильтр
+            f_name = 'lowpass'  # НЧ фильтр
         elif (filter_type == 'HP'):
-            f_name = 'highpass'          # ВЧ фильтр
+            f_name = 'highpass' # ВЧ фильтр
         else:
-            raise ValueError('Ошибка вввода: Тип фильтра') # если передано два значения частот среза
-    elif (isinstance(f_cut_hz, list)):
+            # если передано неправильное название фильтра
+            raise ValueError('Ошибка вввода: Тип фильтра')
+
+    elif (isinstance(f_cut_hz, list)): # если передано несколько значений частот среза, то:
         if (filter_type == 'BP'):
-            f_name = 'bandpass'                 # полосовой фильтр
+            f_name = 'bandpass' # полосовой фильтр
         elif (filter_type == 'BS'):
-            f_name = 'bandstop'                 # заградительный фильтр
+            f_name = 'bandstop' # заградительный фильтр
         else:
+            # если передано неправильное название фильтра
             raise ValueError('Ошибка вввода: Тип фильтра')
 
     else:
-        raise ValueError('Ошибка ввода: Граничные частоты фильтра')
+        # Если что-то не так с переданными частотами среза фильтра
+        raise ValueError('Ошибка ввода: Граничные частоты фильтра') 
         
-    f_d = 1/t_d            # частота дискретизации, Гц
+    f_d = 1/t_d # частота дискретизации, Гц
     w_n = np.array(f_cut_hz)/(f_d/2)    # нормированная частота среза (w/w_d). Нужна для
                                         # работы библиотечной функции
-    b, a = cheby1(filter_order, bnd_att_db, w_n, f_name)  # формирование фильтра
+    b, a = cheby1(filter_order, bnd_att_db, w_n, f_name)    # вычисление коэффициентов передаточной
+                                                            # функции фильтра
     return b, a

@@ -1,15 +1,18 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.fft import fft, fftshift
-from scipy.signal import lfilter, freqz
 
 
-# Отображение сигналов
+# # # # # # # # # # # # #
+# Отображение сигналов  #
+# # # # # # # # # # # # #
+
+# Временная область
 def plot_signal(signal_args):
     """
     Вывести действительную часть сигнала, в случае необходимости вывода
     нескольких линий на один график, они передаются в качестве второй
-    размерности массива, типа: [[`signal_args` первой линии], 
+    размерности массива, типа: [[`signal_args` первой линии графика], 
     [`signal_args` второй линии]]. Одинаковая размерность не обязательна.
     В зависимости от числа переданных аргументов (размерности `signal_args`), 
     функция распознает их следующим образом:
@@ -72,7 +75,7 @@ def plot_signal(signal_args):
     plt.show()
 
 
-# Отображение спектр сигнала
+# Частотная область
 def plot_spectum(signal_args):
     """
     Построить график модуля БПФ сигнала, в случае необходимости вывода 
@@ -143,138 +146,4 @@ def plot_spectum(signal_args):
     plt.xlabel("Частота, МГц") # ось абсцисс        
     plt.legend()
     plt.grid()
-    plt.show()
-
-
-# Вывод ИХ фильтра по его коэффициентам
-def impz(b, a, name):
-    """
-    Вывести график импульсной характеристики на основе переданного набора коэффициентов 
-    (полюсов) `a` и `b` передаточной функции.
-    
-    Parameters
-    ----------       
-    b : array_like
-        Набор коэффициентов (полюсов) знаменателя передаточной функции.
-    a : array_like
-        Набор коэффициентов (полюсов) числителя передатчоной функции.
-    name : string
-        Название графика.
-    Returns
-    -------
-    Функция создает графики и ничего не возвращает.
-    """
-
-    impulse = [0]*100   # impulse - массив отсчетов входного воздействия на фильтр (импульса).
-                        # [0]*100 - это способ задать 100 одинаковых элементов (в данном
-                        # случае - нулей)
-    impulse[0] =1.  # Один из ста отсчетов будет иметь единичное значение. Получится своеобразный
-                    # импульс.
-    x = range(100)  # Набор значений оси абсцисс для построения графика
-    response = lfilter(b, a, impulse)   # Библиотечная функция вычисления отлика фильтра с полюсами
-                                        # передаточной хар-ки 'a', 'b' на входное воздействие 'impulse'
-    plt.figure()
-    plt.stem(x, response)
-    plt.ylabel('Amplitude')
-    plt.xlabel(r'n (samples)')
-    plt.grid()
-    plt.title(name)
-    plt.show()
-
-
-# Вывод АЧХ и ФЧХ фильтра по его коэффициентам
-def mfreqz(b, a):
-    """
-    Вывести графики АЧХ и ФЧХ на основе переданного набора коэффициентов 
-    (полюсов) `a` и `b` передаточной функции. По оси абсцисс откладывается
-    нормированная частота. Функция не используется в исходной части 
-    лабораторной работы, однако студенты могут использовать её при 
-    необходимости.
-    
-    Parameters
-    ----------       
-    b : array_like
-        Набор коэффициентов (полюсов) знаменателя передаточной функции.
-    a : array_like
-        Набор коэффициентов (полюсов) числителя передатчоной функции.
-
-    Returns
-    -------
-    Функция создает графики и ничего не возвращает.
-    """
-    w,h = freqz(b, a)   # Библиотечная функция для определения комплексной частотной
-                        # характеристики h фильтра с полюсами передаточной характеристики
-                        # 'b' и 'a'. W - набор частот, которым соответствуют отсчеты h
-    h_dB = 20 * np.log10(abs(h)) # Перевод КЧХ в логарифмический масштаб
-    
-    plt.subplot(211)    # подграфик для АЧХ
-    plt.plot(w/max(w), h_dB)
-    plt.ylabel('Magnitude (db)')
-    plt.xlabel(r'Normalized Frequency (x$\pi$rad/sample)')
-    plt.title(r'Frequency response')
-    plt.grid()
-    plt.ylim(bottom=-30)
-    
-    plt.subplot(212)    # подграфик для ФЧХ
-    h_Phase = np.unwrap(np.arctan2(np.imag(h), np.real(h)))
-    plt.plot(w/max(w), h_Phase)
-    plt.ylabel('Phase (radians)')
-    plt.xlabel(r'Normalized Frequency (x$\pi$rad/sample)')
-    plt.title(r'Phase response')
-    plt.grid()
-
-    plt.subplots_adjust(hspace=1.5)
-    plt.show()
-
-
-# Вывод АЧХ и ФЧХ фильтра по его коэффициентам
-def mfreqz3(b, a, names, lims=[0,1]):
-    """
-    Вывести по 3 графика АЧХ и ФЧХ на основе переданного набора коэффициентов 
-    (полюсов) `a` и `b` передаточной функции. Для построения 3 графиков
-    необходимо передать двухмерный массив значений коэффициентов `a` и `b`:
-    [[`коэффициенты первого фильтра`], [`коэффициенты второго фильтра`],
-    [[`коэффициенты третьего фильтра`]]].
-    По оси абсцисс откладывается нормированная частота. Во многом данная
-    функция повторяет логику работы mfreqz(), см. её описание выше.
-    
-    Parameters
-    ----------       
-    b : array_like
-        Набор коэффициентов (полюсов) знаменателя передаточной функции.
-    a : array_like
-        Набор коэффициентов (полюсов) числителя передаточной функции.
-    names : array_like
-        Набор названий фильтров, коэффициенты которых переданы в функцию.
-    Returns
-    -------
-    Функция создает графики и ничего не возвращает.
-    """
-    lines = ["-","--","-.",":"]
-    plt.figure()
-    plt.subplot(211)
-    for i in range(3):
-        w, h = freqz(b[i], a[i])
-        h_dB = 20 * np.log10(abs(h))
-        plt.plot(w/max(w), h_dB, linestyle=lines[i])
-        plt.legend(names)
-    plt.ylabel('Magnitude (db)')
-    plt.xlabel(r'Normalized Frequency (x$\pi$rad/sample)')
-    plt.title(r'Frequency response')
-    plt.grid('on')
-    plt.ylim(top=1, bottom=-30)
-    plt.xlim(lims[0], lims[1])
-    
-    plt.subplot(212)
-    for i in range(3):
-        w,h = freqz(b[i], a[i])
-        h_Phase = np.unwrap(np.arctan2(np.imag(h), np.real(h)))
-        plt.plot(w/max(w), h_Phase, linestyle=lines[i])
-        #plt.legend(names)
-    plt.xlim(lims[0], lims[1])
-    plt.ylabel('Phase (radians)')
-    plt.xlabel(r'Normalized Frequency (x$\pi$rad/sample)')
-    plt.title(r'Phase response')
-    plt.grid('on')
-    plt.subplots_adjust(hspace=0.5)
     plt.show()
