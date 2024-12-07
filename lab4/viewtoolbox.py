@@ -8,7 +8,7 @@ from scipy.fft import fft, fftshift
 # # # # # # # # # # # # #
 
 # Временная область
-def plot_signal(signal_args):
+def plot_signal(signal_args: list[list]) -> None:
     """
     Вывести действительную часть сигнала, в случае необходимости вывода
     нескольких линий на один график, они передаются в качестве второй
@@ -76,7 +76,7 @@ def plot_signal(signal_args):
 
 
 # Частотная область
-def plot_spectum(signal_args):
+def plot_spectum(signal_args: list[list]) -> None:
     """
     Построить график модуля БПФ сигнала, в случае необходимости вывода 
     нескольких линий на один график, они передаются в качестве второй 

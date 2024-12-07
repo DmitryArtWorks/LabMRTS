@@ -11,7 +11,7 @@ from scipy.signal import butter, lfilter, cheby2, cheby1
 
 # *чип - один период модулирующего сигнала (в рамках данной ЛР)
 
-def generate_single_chip(signal_type, *signal_data):
+def generate_single_chip(signal_type: str, *signal_data):
     """
     Сформировать отсчеты одного периода одного из следующих сигналов:
     видеоимпульс `video`, радиоимпульс `radio`, АМ-сигнал `AM`, ЛЧМ- 
@@ -71,7 +71,9 @@ def generate_single_chip(signal_type, *signal_data):
 # # # # # # # # # # # # # # #
 
 # Формирование одного периода в/импульса
-def get_video_pulse(t_d, t_window, t_imp):
+def get_video_pulse(t_d: int | float,
+                    t_window: int | float,
+                    t_imp: int | float):
     """
     Сформировать отсчеты видеоимпульса единичной амплитуды. 
     Он будет помещен в самом начале "временной" оси.
@@ -100,7 +102,10 @@ def get_video_pulse(t_d, t_window, t_imp):
 
 
 # Формирование одного периода р/импульса
-def get_radio_pulse(t_d, t_window, t_imp, f_carrier_hz):
+def get_radio_pulse(t_d: int | float,
+                t_window: int | float,
+                t_imp: int | float,
+                f_carrier_hz: int | float):
     """
     Сформировать отсчеты радиоимпульса единичной амплитуды. 
     Он будет помещен в самом начале "временной" оси.
@@ -134,7 +139,11 @@ def get_radio_pulse(t_d, t_window, t_imp, f_carrier_hz):
 
 
 # Формирование одного периода АМ-сигнала
-def get_AM(t_d, t_window, f_carrier_hz, f_mod_hz, i_mod):
+def get_AM(t_d: int | float,
+        t_window: int | float,
+        f_carrier_hz: int | float,
+        f_mod_hz: int | float,
+        i_mod: int | float):
     """
     Сформировать отсчеты АМ-сигнала.
     
@@ -170,7 +179,11 @@ def get_AM(t_d, t_window, f_carrier_hz, f_mod_hz, i_mod):
 
 
 # Формирование одного периода ЛЧМ-сигнала
-def get_chirp_pulse(t_d, t_window, t_imp, f_start_hz, f_chirp_hz):
+def get_chirp_pulse(t_d: int | float,
+                t_window: int | float,
+                t_imp: int | float, 
+                f_start_hz: int | float, 
+                f_chirp_hz: int | float):
     """
     Сформировать отсчеты ЛЧМ-сигнала (в разработке).
     
@@ -211,7 +224,10 @@ def get_chirp_pulse(t_d, t_window, t_imp, f_start_hz, f_chirp_hz):
 # # # # # # # # # # # #
 
 # Применить к сигналу фильтр с "идеальной" АЧХ
-def apply_ideal_filter(t_d, filter_type, f_cut_hz, signal_in):
+def apply_ideal_filter(t_d: int | float, 
+                       filter_type: str, 
+                       f_cut_hz: int | float | list, 
+                       signal_in: list):
     """
     Применить к сигналу один из фильтров (ФНЧ, ФВЧ, ЗФ, ПФ) с 
     идеальной АЧХ (1 - в полосе пропускания, 0 - в полосе подавления, 
@@ -343,7 +359,11 @@ def apply_ideal_filter(t_d, filter_type, f_cut_hz, signal_in):
 
 
 # Применить к сигналу фильтр Баттерворта
-def apply_butt_filter(t_d, filter_type, f_cut_hz, filter_order, signal_in):
+def apply_butt_filter(t_d: int | float, 
+                    filter_type: str, 
+                    f_cut_hz: int | float | list,
+                    filter_order: int, 
+                    signal_in: list):
     """
     Применить к сигналу один из фильтров (ФНЧ, ФВЧ, ЗФ, ПФ) с 
     максимально гладкой АЧХ (фильтр Баттерворта). Функция опирается 
@@ -383,7 +403,12 @@ def apply_butt_filter(t_d, filter_type, f_cut_hz, filter_order, signal_in):
 
 
 # Применить к сигналу фильтр Чебышёва
-def apply_cheb2_filter(t_d, filter_type, f_cut_hz, filter_order, bnd_att_db, signal_in):
+def apply_cheb2_filter(t_d: int | float, 
+                    filter_type: str, 
+                    f_cut_hz: int | float | list,
+                    filter_order: int, 
+                    bnd_att_db: int | float,
+                    signal_in: list):
     """
     Применить к сигналу один из фильтров (ФНЧ, ФВЧ, ЗФ, ПФ) с 
     АЧХ, описываемой полиномом Чебышева II типа (фильтр Чебышева).
@@ -405,6 +430,8 @@ def apply_cheb2_filter(t_d, filter_type, f_cut_hz, filter_order, bnd_att_db, sig
     filter_order : scalar
         Порядок фильтра. Чем выше порядок, тем круче спад АЧХ в переходной 
         полосе.
+    bnd_att_db : scalar
+        Величина подавления вне полосы пропускания.
     signal_in : array_like (real)
         Отсчеты входного действительного сигнала.  
     
@@ -423,7 +450,10 @@ def apply_cheb2_filter(t_d, filter_type, f_cut_hz, filter_order, bnd_att_db, sig
 
 
 # Расчет коэффициентов фильтра Баттерворта
-def create_butt_filter(t_d, filter_type, f_cut_hz, filter_order):
+def create_butt_filter(t_d: int | float, 
+                    filter_type: str, 
+                    f_cut_hz: int | float | list,
+                    filter_order: int):
     """
     Определить коэффициенты передаточной функции фильтра с максимально
     гладкой АЧХ (фильтра Баттерворта). Функция опирается на библиотечные
@@ -490,7 +520,11 @@ def create_butt_filter(t_d, filter_type, f_cut_hz, filter_order):
 
 
 # Расчет коэффициентов Фильтра Чебышева II рода
-def create_cheb2_filter(t_d, filter_type, f_cut_hz, filter_order, bnd_att_db):
+def create_cheb2_filter(t_d: int | float, 
+                    filter_type: str, 
+                    f_cut_hz: int | float | list,
+                    filter_order: int, 
+                    bnd_att_db: int | float):
     """
     Определить коэффициенты передаточной функции фильтра, описываемого полиномом
     Чебышева II рода (фильтра Чебышева II рода). У данного фильтра присутствуют 
@@ -556,7 +590,11 @@ def create_cheb2_filter(t_d, filter_type, f_cut_hz, filter_order, bnd_att_db):
 
 
 # Расчет коэффициентов Фильтра Чебышева I рода
-def create_cheb1_filter(t_d, filter_type, f_cut_hz, filter_order, bnd_att_db):
+def create_cheb1_filter(t_d: int | float, 
+                    filter_type: str, 
+                    f_cut_hz: int | float | list,
+                    filter_order: int, 
+                    bnd_att_db: int | float):
     """
     Определить коэффициенты передаточной функции фильтра, описываемого полиномом
     Чебышева I рода (фильтра Чебышева I рода). У данного фильтра присутствуют пульсации

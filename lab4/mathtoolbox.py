@@ -10,7 +10,11 @@ import numpy as np
 # *чип - один период модулирующего сигнала (в рамках данной ЛР)
 
 
-def generate_sequence(sig_type, t_d, n_chips, t_imp, f_low):
+def generate_sequence(sig_type: str, 
+                    t_d: int | float, 
+                    n_chips: int, 
+                    t_imp: int | float, 
+                    f_low: int | float) -> np.ndarray:
     """
     Сформировать отсчеты последовательности одного из следующих сигналов:
     радиоимпульс `radio`, АМ сигнал `AM`, ЛЧМ сигнал `chirp`. Функция 
@@ -25,7 +29,7 @@ def generate_sequence(sig_type, t_d, n_chips, t_imp, f_low):
         Вид сигнала, отсчеты которого необходимо сформировать.
     t_d : scalar
         Интервал дискретизации сигнала.
-    n_chips : scalar
+    n_chips : int
         Число периодов сигнала, которые необходимо отобразить.
     t_imp : scalar
         Длительность огибающей импульса.
@@ -96,7 +100,9 @@ def generate_sequence(sig_type, t_d, n_chips, t_imp, f_low):
 # # # # # # # # # # # # # # #
 
 # Формирование одного периода в/импульса
-def get_video_pulse(t_d, t_window, t_imp):
+def get_video_pulse(t_d: int | float, 
+                    t_window: int | float, 
+                    t_imp: int | float) -> np.ndarray:
     """
     Сформировать отсчеты видеоимпульса единичной амплитуды. 
     Он будет помещен в самом начале "временной" оси.
@@ -125,7 +131,10 @@ def get_video_pulse(t_d, t_window, t_imp):
 
 
 # Формирование одного периода р/импульса
-def get_radio_pulse(t_d, t_window, t_imp, f_carrier_hz):
+def get_radio_pulse(t_d: int | float, 
+                    t_window: int | float, 
+                    t_imp: int | float, 
+                    f_carrier_hz: int | float) -> np.ndarray:
     """
     Сформировать отсчеты радиоимпульса единичной амплитуды. 
     Он будет помещен в самом начале "временной" оси.
@@ -159,7 +168,11 @@ def get_radio_pulse(t_d, t_window, t_imp, f_carrier_hz):
 
 
 # Формирование одного периода АМ-сигнала
-def get_AM(t_d, t_window, f_carrier_hz, f_mod_hz, i_mod):
+def get_AM(t_d: int | float, 
+           t_window: int | float, 
+           f_carrier_hz: int | float, 
+           f_mod_hz: int | float, 
+           i_mod: int | float) -> np.ndarray:
     """
     Сформировать отсчеты АМ-сигнала.
     
@@ -195,7 +208,11 @@ def get_AM(t_d, t_window, f_carrier_hz, f_mod_hz, i_mod):
 
 
 # Формирование одного периода ЛЧМ-сигнала
-def get_chirp_pulse(t_d, t_window, t_imp, f_start_hz, f_chirp_hz):
+def get_chirp_pulse(t_d: int | float, 
+                    t_window: int | float, 
+                    t_imp: int | float, 
+                    f_start_hz: int | float, 
+                    f_chirp_hz: int | float) -> np.ndarray:
     """
     Сформировать отсчеты ЛЧМ-сигнала (в разработке).
     
