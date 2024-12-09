@@ -71,7 +71,7 @@ def plot_signal(signal_args):
     plt.show()
 
 
-def plot_spectrogram(signal, window_name: str, window_offset_step: int, window_opt_len=8):
+def plot_spectrogram(signal: np.ndarray, window_name: str, window_offset_step: int, window_opt_len=8):
     """
     Функция позволяет построить спектрограмму сигнала при различных параметрах окна.
 
@@ -122,7 +122,7 @@ def plot_spectrogram(signal, window_name: str, window_offset_step: int, window_o
     plt.show()
 
 
-def plot_scalogramm(signal, t_d: float):
+def plot_scalogramm(signal: np.ndarray, t_d: float):
     """
     Функция позволяет построить скейлограмму сигнала.
 
