@@ -61,13 +61,14 @@ def plot_signal(signal_args):
         if (args_len == 3):
             leg.append(signal_args[i][2])
         else:
-            leg.append('Unnamed signal ' + str(i))  # Если не нравится, можно заменить 
-                                                    # содержимое скобок на " ". Работает
-                                                    # тоже красиво
+            leg.append('Безымянный сигнал ' + str(i))   # Если не нравится, можно заменить 
+                                                        # содержимое скобок на " ". Работает
+                                                        # тоже красиво
         
     plt.legend(leg)
     plt.title('Исходный сигнал')
     plt.xlabel("t, мкc") # ось абсцисс
+    plt.ylabel('Амплитуда')
     plt.grid()
     plt.show()
 
@@ -135,12 +136,13 @@ def plot_spectum(signal_args):
         if (len(signal_args[i]) > 2):
             line_label = str(signal_args[i][2])
         else:
-            line_label = 'Unnamed spectrum ' + str(i)   # Выражение может быть заменено 
+            line_label = 'Безымянный спектр ' + str(i)  # Выражение может быть заменено 
                                                         # на: ' '(пробел в кавычках)
             
         plt.plot(f_axis, fftshift(abs(signal_spectrum)), label=line_label)  # построение i-й линии
     plt.title("Спектр") # заголовок
-    plt.xlabel("Частота, МГц") # ось абсцисс       
+    plt.xlabel("Частота, МГц") # ось абсцисс    
+    plt.ylabel('Амплитуда')   
     plt.legend()
     plt.grid()
     plt.show()
@@ -175,8 +177,8 @@ def impz(b, a, name):
                                         # передаточной хар-ки 'a', 'b' на входное воздействие 'impulse'
     plt.figure()
     plt.stem(x, response)
-    plt.ylabel('Amplitude')
-    plt.xlabel(r'n (samples)')
+    plt.ylabel('Амплитуда')
+    plt.xlabel(r'n (отсчёты)')
     plt.grid()
     plt.title(name)
     plt.show()
@@ -209,18 +211,18 @@ def mfreqz(b, a):
     
     plt.subplot(211)    # подграфик для АЧХ
     plt.plot(w/max(w), h_dB)
-    plt.ylabel('Magnitude (db)')
-    plt.xlabel(r'Normalized Frequency (x$\pi$rad/sample)')
-    plt.title(r'Frequency response')
+    plt.ylabel('Амплитуда (дБ)')
+    plt.xlabel(r'Нормализованная частота (x$\pi$ рад/отсчёт)')
+    plt.title(r'АЧХ')
     plt.grid()
     plt.ylim(bottom=-30)
     
     plt.subplot(212)    # подграфик для ФЧХ
     h_Phase = np.unwrap(np.arctan2(np.imag(h), np.real(h)))
     plt.plot(w/max(w), h_Phase)
-    plt.ylabel('Phase (radians)')
-    plt.xlabel(r'Normalized Frequency (x$\pi$rad/sample)')
-    plt.title(r'Phase response')
+    plt.ylabel('Фаза (радианы)')
+    plt.xlabel(r'Нормализованная частота (x$\pi$ рад/отсчёт)')
+    plt.title(r'ФЧХ')
     plt.grid()
 
     plt.subplots_adjust(hspace=1.5)
@@ -258,9 +260,9 @@ def mfreqz3(b, a, names, lims=[0,1]):
         h_dB = 20 * np.log10(abs(h))
         plt.plot(w/max(w), h_dB, linestyle=lines[i])
         plt.legend(names)
-    plt.ylabel('Magnitude (db)')
-    plt.xlabel(r'Normalized Frequency (x$\pi$rad/sample)')
-    plt.title(r'Frequency response')
+    plt.ylabel('Апмлитуда (дБ)')
+    plt.xlabel(r'Нормализованная частота (x$\pi$ рад/отсчёт)')
+    plt.title(r'АЧХ')
     plt.grid('on')
     plt.ylim(top=1)
     plt.xlim(lims[0], lims[1])
@@ -272,9 +274,9 @@ def mfreqz3(b, a, names, lims=[0,1]):
         plt.plot(w/max(w), h_Phase, linestyle=lines[i])
         #plt.legend(names)
     plt.xlim(lims[0], lims[1])
-    plt.ylabel('Phase (radians)')
-    plt.xlabel(r'Normalized Frequency (x$\pi$rad/sample)')
-    plt.title(r'Phase response')
+    plt.ylabel('Фаза (радианы)')
+    plt.xlabel(r'Нормализованная частота (x$\pi$ рад/отсчёт)')
+    plt.title(r'ФЧХ')
     plt.grid('on')
     plt.subplots_adjust(hspace=0.5)
     plt.show()

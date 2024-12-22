@@ -90,7 +90,7 @@ def plot_distrib(proc_param, title: str):
         if args_len == 2:
             label.append(str(proc_param[i][1]))
         else:
-            label.append('Unnamed distrib. density ' + str(i))
+            label.append('Безымянная ПР ' + str(i))
         
     plt.hist(proc, bins=128, density=True, label=label) # отображение гистограммы 
     plt.legend(loc='best', frameon=False)
@@ -159,14 +159,14 @@ def plot_corr_func(corr_funcs_param, time_window: int | float, n_counts: int, bo
         if args_len == 2:
             label = str(corr_funcs_param[i][1])
         else:
-            label = 'Unnamed corr. func. ' + str(i)
+            label = 'Безымянная КФ ' + str(i)
         
         plt.plot(shift_axis_us, corr_funcs_param[i][0], label=label)    # построение i-го графика
 
     
     plt.xlim(-bound_graf, bound_graf)
     plt.title('КФ')
-    plt.xlabel(r'$\tau$') 
+    plt.xlabel(r'$\tau$, мкс') 
     plt.ylabel(r'R($\tau$)', rotation='horizontal')
     plt.legend()
     plt.grid()
@@ -203,7 +203,7 @@ def plot_SPD_DNWGN(r, f_sampl: int | float, n_counts: int):
     plt.plot(freqs, spec_x_mean, label='среднее')
     plt.legend(loc='best', frameon=False)
     plt.title('СПМ ДБГШ')
-    plt.xlabel(r'$\omega$'), plt.ylabel(r'S($\omega$)', rotation='horizontal')
+    plt.xlabel(r'$f$, МГц'), plt.ylabel(r'S($f$)', rotation='horizontal')
     plt.xlim((-0.5*f_sampl, 0.5*f_sampl))
     plt.grid()
     plt.show()
@@ -269,14 +269,14 @@ def plot_SPD(corr_funcs_param, f_sampl: int | float, n_counts: int, bound_graf: 
         if args_len == 2:
             label = str(corr_funcs_param[i][1])
         else:
-            label = 'Unnamed spectrum ' + str(i)
+            label = 'Безымянная СПМ ' + str(i)
         
         plt.plot(freqs, spectr, label=label)    # отображение очередного графика
 
     plt.legend(loc='best', frameon=False)
     plt.title('СПМ процесса с заданной КФ')
-    plt.xlabel(r'$\omega$') 
-    plt.ylabel(r'S($\omega$)', rotation='horizontal')
+    plt.xlabel(r'$f$, МГц') 
+    plt.ylabel(r'S($f$)', rotation='horizontal')
     plt.xlim((-bound_graf, bound_graf))
     plt.grid()
     plt.show()

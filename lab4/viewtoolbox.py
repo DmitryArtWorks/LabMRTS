@@ -64,13 +64,14 @@ def plot_signal(signal_args: list[list]) -> None:
         if (args_len == 3):
             leg.append(signal_args[i][2])
         else:
-            leg.append('Unnamed signal ' + str(i))  # Если не нравится, можно заменить 
-                                                    # содержимое скобок на " ". Работает
-                                                    # тоже красиво
+            leg.append('Безымянный сигнал ' + str(i))   # Если не нравится, можно заменить 
+                                                        # содержимое скобок на " ". Работает
+                                                        # тоже красиво
         
     plt.legend(leg)
     plt.title('Исходный сигнал')
     plt.xlabel("t, мкc") # ось абсцисс
+    plt.ylabel('Амплитуда')
     plt.grid()
     plt.show()
 
@@ -138,12 +139,13 @@ def plot_spectum(signal_args: list[list]) -> None:
         if (len(signal_args[i]) > 2):
             line_label = str(signal_args[i][2])
         else:
-            line_label = 'Unnamed spectrum ' + str(i)   # Выражение может быть заменено 
+            line_label = 'Безымянный спектр ' + str(i)  # Выражение может быть заменено 
                                                         # на: ' '(пробел в кавычках)
             
         plt.plot(f_axis, fftshift(abs(signal_spectrum)), label=line_label)  # построение i-й линии
     plt.title("Спектр") # заголовок
-    plt.xlabel("Частота, МГц") # ось абсцисс        
+    plt.xlabel("Частота, МГц") # ось абсцисс 
+    plt.ylabel('Амплитуда')       
     plt.legend()
     plt.grid()
     plt.show()
@@ -195,8 +197,8 @@ def plot_spectrogram(signal: np.ndarray, window_name: str, window_offset_step: i
                  NFFT=window_opt_len,  # количество точек, используемых для вычисления БПФ
                  window=window,  # оконная функция, применяемая к каждому сегменту сигнала перед выполнением БПФ
                  noverlap=noverlap) # количество точек перекрытия между соседними окнами
-    plt.xlabel('Sample')
-    plt.ylabel('Normalized Frequency')
+    plt.xlabel('Отсчёты')
+    plt.ylabel('Нормализованная частота')
     plt.show()
 
 
