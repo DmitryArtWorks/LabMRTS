@@ -103,7 +103,7 @@ def plot_3D_func(f: Callable[[np.ndarray, np.ndarray], np.ndarray],
     axis_1, axis_2 = np.meshgrid(x_1_axis, x_2_axis)    # создание координатной сетки
     z = f(axis_1, axis_2)   # функция нелинейного преобразования
     
-    surf = ax.plot_surface(axis_1, axis_2, z)   # построение графика функции от двух переменных
+    ax.plot_surface(axis_1, axis_2, z)   # построение графика функции от двух переменных
 
     ax.set_xlabel('$x_1$')
     ax.set_ylabel('$x_2$')
