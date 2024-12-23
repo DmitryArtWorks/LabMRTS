@@ -54,7 +54,7 @@ def plot_distrib_with_analyt(rand_var, x_axis, w, graf_param: list):
     plt.show()
 
 
-def plot_2D_graf(f: Callable[[np.ndarray, np.ndarray], np.ndarray], 
+def plot_2D_func(f: Callable[[np.ndarray, np.ndarray], np.ndarray], 
                  x_axis: np.ndarray):
     """
     Функция позволяет отобразить график функции от одной переменой.
@@ -78,7 +78,7 @@ def plot_2D_graf(f: Callable[[np.ndarray, np.ndarray], np.ndarray],
     plt.grid()
     plt.show()
 
-def plot_3D_graf(f: Callable[[np.ndarray, np.ndarray], np.ndarray], 
+def plot_3D_func(f: Callable[[np.ndarray, np.ndarray], np.ndarray], 
                  x_1_axis: np.ndarray, 
                  x_2_axis: np.ndarray):
     """
